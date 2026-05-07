@@ -1,6 +1,6 @@
 # 安装指南
 
-> **版本**: v2.0 | **日期**: 2026-05-08  
+> **版本**: v3.0 | **日期**: 2026-05-08  
 > **适用**: OpenClaw, Hermes, Claude Code, OpenCode
 
 ---
@@ -21,7 +21,9 @@
 bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
   --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
   --gitserver-url https://git.osc.life \
-  --gitserver-token YOUR_TOKEN
+  --gitserver-token YOUR_TOKEN \
+  --gitgroup-name claws-memory \
+  --agents hermes:1,openclaw:3,opencode:2,claude-code:0
 ```
 
 ### 参数说明
@@ -31,9 +33,27 @@ bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugin
 | `--plugins-url` | ✅ | 插件仓库地址 |
 | `--gitserver-url` | ✅ | Git 服务器地址 |
 | `--gitserver-token` | ✅ | 访问令牌 |
-| `--group` | ❌ | 组织名称 (默认: claws-memory) |
-| `--agents` | ❌ | 要安装的网关列表 (默认: openclaw,hermes,claude-code,opencode) |
+| `--gitgroup-name` | ✅ | Git 组/组织名称 |
+| `--agents` | ❌ | 各类型私有仓库数量 (默认: hermes:1,openclaw:1,opencode:1,claude-code:1) |
 | `--local-path` | ❌ | 本地安装路径 |
+
+### agents 参数格式
+
+```
+hermes:N,openclaw:M,opencode:K,claude-code:L
+```
+
+| 类型 | 说明 |
+|------|------|
+| `hermes:N` | Hermes 私有仓库数量 |
+| `openclaw:N` | OpenClaw 私有仓库数量 |
+| `opencode:N` | OpenCode 私有仓库数量 |
+| `claude-code:N` | Claude Code 私有仓库数量 |
+
+**示例：**
+- `hermes:1,openclaw:3,opencode:2,claude-code:0` - OpenClaw 3个，OpenCode 2个，其他各1个
+- `hermes:1,openclaw:1,opencode:1,claude-code:1` - 每种1个
+- `openclaw:1` - 仅 OpenClaw 1个
 
 ---
 
