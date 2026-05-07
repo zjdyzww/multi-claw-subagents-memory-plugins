@@ -2,7 +2,7 @@
 
 > **多智能体多网关多代理记忆增强插件系统**  
 > **版本**: v6.1 | **日期**: 2026-05-08  
-> **灵感来源**: [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 一次安装模式
+> **作者**: 灵禾镜-玉山禾
 
 ---
 
@@ -15,6 +15,10 @@
 - 📦 **三地一致性**: 表象 ↔ MEMORY.md ↔ Gitea 实时同步
 - ⚡ **零配置安装**: 一次对话即可完成部署
 - 🏛️ **记忆宫殿**: 每个网关独立的记忆宫殿规则和技能
+
+## 安装前提
+- 已安装OpenClaw、Hermes、Claude-Code、OpenCode任意1个智能体
+- 拥有git平台（github、gitea、gitlab等）账户和该账户关联的拥有创建仓库并进行读写权限的token
 
 ---
 
@@ -80,10 +84,10 @@ add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/y
 ```
 
 **参数说明：**
-- `plugins-url`: 插件仓库地址
-- `gitserver-url`: Git 服务器地址
-- `gitserver-token`: 访问令牌
-- `gitgroup-name`: Git 组/组织名称
+- `plugins-url`: 插件仓库地址（不用改）
+- `gitserver-url`: Git服务器地址（用于存储您的智能体的全量时序记忆）
+- `gitserver-token`: 私有Git服务器账户访问令牌
+- `gitgroup-name`: Git 组/组织名称（确保该Git组/组织已创建）
 
 ### 方法二：安装脚本
 
