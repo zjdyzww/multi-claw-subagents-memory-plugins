@@ -1,175 +1,161 @@
 # Multi-Claw Subagents Memory Plugins
 
-> 多智能体多网关多代理多关联子仓库适配的记忆增强插件系统  
+> **多智能体多网关多代理记忆增强插件系统**  
 > **版本**: v3.0 | **日期**: 2026-05-08  
 > **灵感来源**: [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 一次安装模式
 
-## 🚀 一次对话安装
+---
 
-参考 oh-my-openagent 的 `bunx oh-my-openagent install` 模式，设计零配置安装体验：
+## 核心创新
 
-```
-add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/myz/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<TOKEN>
-```
+本项目整合了 **双系统协同记忆框架** 与 **多智能体多网关架构**，实现：
 
-或复制以下提示词到 LLM Agent：
+- 🧠 **双系统协同**: System 2 海绵式全量吸收 ↔ System 1 淘金式提炼
+- 🌐 **多网关路由**: OpenClaw + Hermes + Claude-Code + OpenCode 分工协作
+- 📦 **三地一致性**: 表象 ↔ MEMORY.md ↔ Gitea 实时同步
+- ⚡ **零配置安装**: 一次对话即可完成部署
 
-```
-Install and configure multi-claw-subagents-memory-plugins by following the instructions here:
-https://raw.githubusercontent.com/code-yeongyu/multi-claw-subagents-memory-plugins/main/docs/INSTALL.md
-```
+---
 
-**完整安装脚本用法**：
-
-```bash
-bash <(curl -sL https://git.osc.life/myz/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
-  --plugins-url https://git.osc.life/myz/multi-claw-subagents-memory-plugins \
-  --gitserver-url https://git.osc.life \
-  --gitserver-token YOUR_GIT_TOKEN \
-  --group claws-memory
-```
-
-## 项目概述
-
-本项目为 OpenClaw、Hermes、Claude Code、OpenCode 等智能体提供统一的**多层记忆管理系统**，实现：
-
-- ✅ 4 个智能体独立私有记忆仓 (L1-L4 四层架构)
-- ✅ 1 个公共记忆主仓 + 2 个业务/代码子仓
-- ✅ 多网关路由与记忆同步机制
-- ✅ 完整的访问控制与一致性保障
-
-## 核心架构
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Multi-Claw Memory Architecture v2.0              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
-│  │  OpenClaw  │ │   Hermes   │ │Claude-Code │ │  OpenCode   ││
-│  │  Private   │ │   Private   │ │   Private   │ │   Private   ││
-│  │  Memory    │ │   Memory    │ │   Memory    │ │   Memory    ││
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘│
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────────┐ │
-│  │                  Shared Memory Layer                          │ │
-│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐                  │ │
-│  │  │  Main    │  │ Business │  │   Code   │                  │ │
-│  │  │  Memory  │  │  Memory  │  │  Memory  │                  │ │
-│  │  └──────────┘  └──────────┘  └──────────┘                  │ │
-│  └──────────────────────────────────────────────────────────────┘ │
-│                                                                  │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
-│  │  Gateway   │ │  Gateway    │ │  Gateway    │ │  Gateway    ││
-│  │  Router    │ │  Sync       │ │  Code       │ │  OpenCode   ││
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘│
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-## L1-L4 记忆层级
-
-| 层级 | 名称 | 职责 | 内容 |
-|------|------|------|------|
-| **L1** | Core | 核心身份与协议 | 身份定义、排他规则、MCP协议 |
-| **L2** | Business | 业务规则 | 任务分配、协作模式、权限矩阵 |
-| **L3** | Config | 运行环境 | 软硬件配置、API端点 |
-| **L4** | Index | 快速检索 | 记忆索引、版本历史 |
-
-## 仓库结构
+## 目录结构
 
 ```
 multi-claw-subagents-memory-plugins/
-├── .gateways/                        # 网关配置层
+│
+├── .memory-agent-files/              # ⭐ 记忆强化核心文件（来自 memory-agent-plugins）
+│   ├── AGENT_PROMPT.md             # 完整代理提示词
+│   ├── SKILL_DUAL_THINKING.md      # 双系统协同技能
+│   ├── SKILL_MEMORY_MANAGER.md      # 记忆管理器技能
+│   ├── MEMORY_SYSTEM.md             # 记忆系统设计
+│   ├── MEMORY_INDEX.md             # 记忆索引结构
+│   ├── CORE.md                    # 核心架构
+│   ├── CONFIDENCE_PROPAGATION.md  # 置信度传播
+│   ├── PATH_ANALYSIS.md            # 路径分析
+│   ├── PERSONA_COORDINATOR.md      # 角色协调器
+│   ├── RETRIEVAL_ROUTER.md         # 检索路由
+│   ├── RESIDUAL_QUEUE.md           # 残差队列
+│   ├── VERSION_*.md                # 版本管理
+│   ├── HERMES_INTEGRATION.md       # Hermes 集成指南
+│   ├── BUSINESS/                   # 业务示例
+│   ├── episodes/                   # 会话片段
+│   └── 论文_疯狂的简洁_记忆强化框架.md
+│
+├── plugins/                         # 插件源码
+│   ├── shared-memory-core/          # 共享核心库
+│   │   ├── src/
+│   │   │   ├── git-sync.ts        # Git 同步管理
+│   │   │   ├── indexer.ts         # 索引引擎
+│   │   │   ├── access-control.ts  # 访问控制
+│   │   │   └── event-bus.ts      # 事件总线
+│   │   └── package.json
+│   │
+│   ├── openclaw-memory-plugin/     # OpenClaw 插件
+│   └── openclaw-memory-plugin/skills/openclaw-memory-skill/SKILL.md
+│
+├── .gateways/                       # 网关配置
 │   ├── openclaw-gateway.md
 │   └── hermes-gateway.md
 │
-├── .agents/                          # 智能体定义层
-│   ├── openclaw/private-memory/      # OpenClaw 私有仓
-│   ├── hermes/private-memory/        # Hermes 私有仓
-│   ├── claude-code/private-memory/   # Claude-Code 私有仓
-│   └── opencode/private-memory/      # OpenCode 私有仓
+├── scripts/                         # 管理脚本
+│   ├── install.sh                  # ⭐ 一次安装脚本
+│   ├── init-repos.sh               # 初始化子仓库
+│   ├── sync-memory.sh              # 同步脚本
+│   └── benchmark.sh                # 性能测试
 │
-├── .shared/                          # 公共记忆层
-│   ├── main-memory/                 # 公共主仓
-│   │   ├── L1_PROTOCOLS/          # 核心协议
-│   │   ├── L2_RULES/              # 业务规则
-│   │   ├── L3_CONFIG/             # 配置层
-│   │   └── L4_INDEX/             # 索引层
-│   │
-│   ├── business-memory/             # 业务子仓
-│   │   ├── projects/xz-idmp/      # 项目知识
-│   │   └── domains/               # 业务领域
-│   │
-│   └── code-memory/                # 代码子仓
-│       ├── snippets/              # 代码片段
-│       └── patterns/             # 设计模式
-│
-├── .core/                           # 核心框架层
-│   ├── CORE.md                    # 架构设计
-│   └── MEMORY_SYSTEM.md           # 系统规范
-│
-├── plugins/                         # 插件源码
-│   ├── shared-memory-core/         # 共享核心库
-│   └── openclaw-memory-plugin/    # OpenClaw 插件
-│
-├── docs/                            # 文档
-│   ├── architecture.md
-│   └── user-guide.md
-│
-└── scripts/                         # 管理脚本
-    ├── init-repos.sh
-    ├── sync-memory.sh
-    └── benchmark.sh
+└── docs/                           # 文档
+    ├── INSTALL.md                   # ⭐ 安装指南
+    ├── architecture.md              # 架构设计
+    └── user-guide.md              # 用户指南
 ```
 
-## 快速开始
+---
 
-### 1. 克隆仓库
+## 🚀 快速安装
+
+### 方法一：复制提示词（推荐）
+
+```
+add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<YOUR_TOKEN>
+```
+
+### 方法二：安装脚本
 
 ```bash
-git clone https://git.osc.life/myz/multi-claw-subagents-memory-plugins.git
-cd multi-claw-subagents-memory-plugins
+bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
+  --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
+  --gitserver-url https://git.osc.life \
+  --gitserver-token <YOUR_TOKEN>
 ```
 
-### 2. 初始化子仓库
+---
 
-```bash
-bash scripts/init-repos.sh
+## 双系统协同工作流
+
+```
+USER 对话
+    │
+    ▼
+┌─────────────────────────────┐
+│ System 2: 海绵式吸收        │
+│ 零遗漏全量扫描 → 构建表象    │
+└─────────────────────────────┘
+    │ 完整记忆表象
+    ▼
+┌─────────────────────────────┐
+│ System 1: 淘金式提炼        │
+│ 7条标准筛选 → 写入MEMORY.md │
+└─────────────────────────────┘
+    │ 一致性保证
+    ▼
+┌─────────────────────────────┐
+│ Gitea 同步                │
+│ 定时 10:00/22:00 + 即时重大变更 │
+└─────────────────────────────┘
 ```
 
-### 3. 配置插件
+---
 
-编辑 `~/.openclaw/openclaw.json`：
+## 三地一致性
 
-```json
-{
-  "plugins": {
-    "entries": {
-      "openclaw-memory-plugin": {
-        "enabled": true,
-        "config": {
-          "mainRepoUrl": "https://git.osc.life/myz/main-memory-shared.git",
-          "businessRepoUrl": "https://git.osc.life/myz/business-memory-shared.git",
-          "codeRepoUrl": "https://git.osc.life/myz/code-memory-shared.git",
-          "privateRepoUrl": "https://git.osc.life/myz/openclaw-memory-private.git",
-          "syncInterval": 300000
-        }
-      }
-    }
-  }
-}
+```
+System 2 表象（会话内存）  ←→  MEMORY.md（本地，~2200字）  ←→  Gitea（远程，全量）
+       ↑                            ↑                            ↑
+   本次对话全量               有效事实沉淀                   版本历史快照
+   不直接持久化               金字塔结构                    每commit = 全量
 ```
 
-### 4. 重启 Gateway
+| 冲突场景 | 处理 |
+|---------|------|
+| System 2 vs MEMORY.md | System 2 为准，立即更新 MEMORY.md |
+| MEMORY.md vs Gitea | 定时同步，重大变更立即推送 |
+| 三方冲突 | System 2 最新 > MEMORY.md > Gitea |
 
-```bash
-openclaw gateway restart
+---
+
+## 网关架构
+
+| 网关 | 职责 | 同步策略 |
+|------|------|----------|
+| **OpenClaw** | 主网关、智能体路由 | 实时广播 |
+| **Hermes** | 记忆网关、同步协调 | 定时 10:00/22:00 |
+| **Claude-Code** | 代码网关、任务委派 | 会话级隔离 |
+| **OpenCode** | 开源网关、嵌入检索 | 向量索引 |
+
+---
+
+## 记忆索引结构
+
+```
+MEMORY.md
+├── L1_CORE          # 核心身份、排他规则
+├── L2_BUSINESS      # 业务记忆
+├── L3_CONFIG        # 运行环境
+└── L4_INDEX        # 快速检索索引
 ```
 
-## 核心功能
+---
 
-### 记忆管理
+## 插件核心功能
 
 | 功能 | 命令 | 说明 |
 |------|------|------|
@@ -179,52 +165,50 @@ openclaw gateway restart
 | 同步记忆 | `memory.sync --repos all` | 同步所有仓库 |
 | 查看状态 | `memory.status` | 查看同步状态 |
 
-### 性能基准测试
+---
 
-```bash
-# 运行基准测试
-bash scripts/benchmark.sh
+## 仓库命名规则
 
-# 自定义配置
-AGENTS=openclaw,hermes CONCURRENCY=20 bash scripts/benchmark.sh
-```
+所有仓库创建在 `claws-memory` 组织下：
 
-## 网关职责
+| 仓库类型 | 仓库名 |
+|----------|--------|
+| 公共主仓 | `claws-memory/main-memory-shared` |
+| 业务子仓 | `claws-memory/business-memory-shared` |
+| 代码子仓 | `claws-memory/code-memory-shared` |
+| OpenClaw 私有 | `claws-memory/openclaw-memory-private` |
+| Hermes 私有 | `claws-memory/hermes-memory-private` |
+| Claude-Code 私有 | `claws-memory/claude-code-memory-private` |
+| OpenCode 私有 | `claws-memory/opencode-memory-private` |
 
-| 网关 | 职责 | 路由策略 | 同步方式 |
-|------|------|----------|----------|
-| **OpenClaw** | 主网关、智能体路由 | 确定性绑定 | 实时广播 |
-| **Hermes** | 记忆网关、同步协调 | 内容路由 | 定时同步 (10:00/22:00) |
-| **Claude-Code** | 代码网关、任务委派 | 任务类型 | 会话级隔离 |
-| **OpenCode** | 开源网关、嵌入检索 | 许可证过滤 | 向量索引 |
+---
 
-## 同步策略
+## 核心文件说明
 
-| 记忆类型 | 同步频率 | 冲突解决 | 一致性 |
-|----------|----------|----------|--------|
-| 私有记忆 | 实时 | 单智能体权威 | 强一致性 |
-| 公共主仓 | 10:00 / 22:00 | 最后写入者胜出 | 最终一致性 |
-| 业务子仓 | 按需触发 | 审核机制 | 会话一致性 |
-| 代码子仓 | 代码提交时 | 版本合并 | 强一致性 |
+| 文件 | 说明 |
+|------|------|
+| `AGENT_PROMPT.md` | 完整代理提示词 v2（直接注册） |
+| `SKILL_DUAL_THINKING.md` | 双系统协同技能 v2（海绵+淘金） |
+| `SKILL_MEMORY_MANAGER.md` | 记忆管理器技能 v2（一致性执行） |
+| `MEMORY_SYSTEM.md` | 记忆系统设计文档 v2 |
+| `MEMORY_INDEX.md` | 记忆索引结构模板 |
+| `CORE.md` | 核心架构文档 |
+| `HERMES_INTEGRATION.md` | Hermes 集成指南 |
 
-## 性能指标
-
-| 指标 | 目标 | 测量方法 |
-|------|------|----------|
-| 记忆检索延迟 | < 100ms | P50 响应时间 |
-| 同步成功率 | 99% | 成功/总数 |
-| 冲突解决时间 | < 5min | 检测到解决 |
-| 记忆命中率 | 85% | 命中/查询 |
+---
 
 ## 文档
 
 | 文档 | 说明 |
 |------|------|
-| [架构设计](./.core/CORE.md) | 核心架构详细设计 |
-| [系统规范](./.core/MEMORY_SYSTEM.md) | 记忆系统规范 |
-| [用户指南](./docs/user-guide.md) | 使用指南 |
-| [设计方案 v2](./多智能体多网关多代理记忆增强插件建设方案v2.md) | 完整建设方案 |
+| [安装指南](./docs/INSTALL.md) | 零配置安装说明 |
+| [架构设计](./docs/architecture.md) | 系统架构详解 |
+| [用户指南](./docs/user-guide.md) | 使用手册 |
+
+---
 
 ## License
 
 MIT License
+
+**项目地址**: https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins
