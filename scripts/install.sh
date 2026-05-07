@@ -1,5 +1,5 @@
 #!/bin/bash
-# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v6.0
+# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v6.1
 #
 # 功能:
 # 1. 创建记忆仓库（默认每种类型1个）
@@ -104,7 +104,7 @@ print_banner() {
   echo ""
   echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
-  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v6.0 ║${NC}"
+  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v6.1 ║${NC}"
   echo -e "${GREEN}║   一次安装 + 动态扩展                              ║${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
   echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
@@ -468,12 +468,58 @@ add_private_repo() {
   log_success "✅ 添加完成: $CURRENT_COUNT → $TARGET_COUNT 个 $TYPE_DISPLAY"
 }
 
+# 检测已安装的旧版本
+detect_existing_installation() {
+  if [[ -d "$LOCAL_PATH/.git" ]]; then
+    # 已安装，检测版本
+    CURRENT_VERSION="unknown"
+    if [[ -f "$LOCAL_PATH/VERSION" ]]; then
+      CURRENT_VERSION=$(cat "$LOCAL_PATH/VERSION")
+    fi
+    
+    # 获取最新版本
+    LATEST_VERSION=$(curl -sL "$PLUGINS_URL/raw/main/VERSION" 2>/dev/null || echo "unknown")
+    
+    if [[ "$CURRENT_VERSION" != "$LATEST_VERSION" ]] && [[ "$CURRENT_VERSION" != "unknown" ]]; then
+      echo ""
+      echo -e "${YELLOW}⚠️  检测到已安装旧版本${NC}"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo -e "  当前版本: ${YELLOW}$CURRENT_VERSION${NC}"
+      echo -e "  最新版本: ${GREEN}$LATEST_VERSION${NC}"
+      echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      echo ""
+      echo "建议使用升级脚本:"
+      echo ""
+      echo -e "  ${CYAN}bash <(curl -sL $PLUGINS_URL/raw/main/scripts/upgrade.sh)${NC}"
+      echo ""
+      echo "或使用 --force 强制安装（会覆盖现有配置）:"
+      echo ""
+      echo "  bash $0 --force ..."
+      echo ""
+      echo -n "是否继续安装? (将升级到最新版本) (y/N): "
+      read -r response
+      case "$response" in
+        [yY][eE][sS]|[yY])
+          log_info "继续安装，将升级到 v$LATEST_VERSION..."
+          ;;
+        *)
+          log_info "取消安装"
+          exit 0
+          ;;
+      esac
+    fi
+  fi
+}
+
 # 主安装流程
 do_install() {
   print_banner
   
-  log_info "开始安装 Multi-Claw Memory Plugins v6.0..."
+  log_info "开始安装 Multi-Claw Memory Plugins v6.1..."
   echo ""
+  
+  # 检测已安装的旧版本
+  detect_existing_installation
   
   # 验证必要参数
   if [[ -z "$PLUGINS_URL" ]] || [[ -z "$GITSERVER_URL" ]] || [[ -z "$GITSERVER_TOKEN" ]] || [[ -z "$GITGROUP" ]]; then

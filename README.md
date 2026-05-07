@@ -1,7 +1,7 @@
 # Multi-Claw Subagents Memory Plugins
 
 > **多智能体多网关多代理记忆增强插件系统**  
-> **版本**: v4.0 | **日期**: 2026-05-08  
+> **版本**: v6.1 | **日期**: 2026-05-08  
 > **灵感来源**: [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 一次安装模式
 
 ---
@@ -108,6 +108,77 @@ bash install.sh --add-agent opencode:2 --gitgroup-name claws-memory
 
 # 查看当前配置
 bash install.sh --status --gitgroup-name claws-memory
+```
+
+---
+
+## 🔄 版本升级
+
+### 自动升级（推荐）
+
+```bash
+bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/upgrade.sh)
+```
+
+### 升级选项
+
+| 选项 | 说明 |
+|------|------|
+| `--check` | 仅检查版本，不升级 |
+| `--dry-run` | 预览升级内容，不执行 |
+| `--force` | 强制升级（跳过确认） |
+
+### 示例
+
+```bash
+# 检查版本
+bash upgrade.sh --check
+
+# 预览升级
+bash upgrade.sh --dry-run
+
+# 强制升级
+bash upgrade.sh --force
+```
+
+### 升级说明
+
+- 升级前自动创建备份（位于 `~/.openclaw/memory-plugins.backup.XXXXXXXX/`）
+- 自动更新记忆宫殿、Skills、memory-agent-files
+- 升级后可随时回滚
+
+---
+
+## 📋 版本历史
+
+| 版本 | 日期 | 主要变更 |
+|------|------|----------|
+| **v6.1** | 2026-05-08 | 安装脚本版本检测、升级提示 |
+| **v6.0** | 2026-05-08 | 简化安装提示词、动态增加私有仓库 |
+| **v5.0** | 2026-05-08 | 支持动态私有仓库数量 |
+| **v4.0** | 2026-05-08 | 记忆宫殿 (Memory Palace) 功能 |
+| **v3.0** | 2026-05-08 | 整合 memory-agent-plugins |
+| **v2.0** | 2026-05-08 | L1-L4 四层记忆架构 |
+
+---
+
+## 🔧 手动升级
+
+如自动升级失败，可手动升级：
+
+```bash
+# 1. 备份
+cp -r ~/.openclaw/memory-plugins ~/.openclaw/memory-plugins.backup
+
+# 2. 拉取最新代码
+cd ~/.openclaw/memory-plugins
+git fetch origin main
+git reset --hard origin/main
+git submodule update --init --recursive
+
+# 3. 更新本地文件
+cp -r .memory-palace/* ~/.openclaw/memory-palace/
+cp agents/openclaw/SKILL.md ~/.openclaw/workspace/skills/memory-palace.md
 ```
 
 ---
