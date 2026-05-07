@@ -1,7 +1,7 @@
 # Multi-Claw Subagents Memory Plugins
 
 > **多智能体多网关多代理记忆增强插件系统**  
-> **版本**: v6.1 | **日期**: 2026-05-08  
+> **版本**: v7.0 | **日期**: 2026-05-08  
 > **灵感来源**: [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 一次安装模式
 
 ---
@@ -15,6 +15,7 @@
 - 📦 **三地一致性**: 表象 ↔ MEMORY.md ↔ Gitea 实时同步
 - ⚡ **零配置安装**: 一次对话即可完成部署
 - 🏛️ **记忆宫殿**: 每个网关独立的记忆宫殿规则和技能
+- ⏰ **时间记忆**: 全量快照 + 增量 Diff + 分支管理 + 历史回溯
 
 ---
 
@@ -58,15 +59,20 @@ multi-claw-subagents-memory-plugins/
 │   └── openclaw-memory-plugin/   # OpenClaw 插件
 │
 ├── scripts/                        # 管理脚本
-│   ├── install.sh               # ⭐ 一次安装脚本 v2
-│   ├── init-repos.sh            # 初始化子仓库
+│   ├── install.sh               # ⭐ 一次安装脚本 v6.1
+│   ├── upgrade.sh               # ⭐ 版本升级脚本 v1.0
 │   ├── sync-memory.sh           # 同步脚本
+│   ├── time-memory.sh           # ⭐ 时间记忆脚本 v1.0（全量/增量/分支/回溯）
+│   ├── init-repos.sh            # 初始化子仓库
 │   └── benchmark.sh             # 性能测试
 │
 └── docs/                          # 文档
     ├── INSTALL.md               # 安装指南
     ├── architecture.md          # 架构设计
-    └── user-guide.md           # 用户指南
+    ├── user-guide.md           # 用户指南
+    ├── UPGRADE.md               # 升级指南
+    ├── openclaw-plugin-config.md # OpenClaw 插件配置
+    └── TIME_MEMORY.md           # ⭐ 时间记忆功能（v7.0 新增）
 ```
 
 ---
@@ -153,6 +159,7 @@ bash upgrade.sh --force
 
 | 版本 | 日期 | 主要变更 |
 |------|------|----------|
+| **v7.0** | 2026-05-08 | ⭐ 时间记忆功能：全量快照+增量Diff+分支管理+历史回溯 |
 | **v6.1** | 2026-05-08 | 安装脚本版本检测、升级提示 |
 | **v6.0** | 2026-05-08 | 简化安装提示词、动态增加私有仓库 |
 | **v5.0** | 2026-05-08 | 支持动态私有仓库数量 |
@@ -348,6 +355,26 @@ MEMORY.md
 
 ---
 
+## 时间记忆功能（v7.0 新增）
+
+> ⏰ **全量记忆自带时间记忆和增量记忆**
+
+时间记忆是 v7.0 的核心功能，让每个 Gitea 仓库中的记忆都拥有：
+
+| 能力 | 说明 | 命令 |
+|------|------|------|
+| **全量快照** | 每个 Commit = 全量快照 + 时间戳 | `time-memory.sh full <repo> "msg"` |
+| **增量提交** | 仅记录变更部分（Diff） | `time-memory.sh inc <repo> "msg"` |
+| **分支管理** | 按时间/项目/网关创建分支 | `time-memory.sh branch <repo> <name>` |
+| **时间回溯** | 一键回到任意时间点 | `time-memory.sh timegoto <repo> <date>` |
+| **历史查看** | 查看版本演变 | `time-memory.sh history <repo> [n]` |
+| **版本对比** | 对比两个版本差异 | `time-memory.sh diff <repo> <v1> <v2>` |
+| **时间线视图** | 可视化时间线 | `time-memory.sh log <repo>` |
+
+**详细文档**: [时间记忆](./docs/TIME_MEMORY.md)
+
+---
+
 ## 文档
 
 | 文档 | 说明 |
@@ -355,6 +382,9 @@ MEMORY.md
 | [安装指南](./docs/INSTALL.md) | 零配置安装说明 |
 | [架构设计](./docs/architecture.md) | 系统架构详解 |
 | [用户指南](./docs/user-guide.md) | 使用手册 |
+| [升级指南](./docs/UPGRADE.md) | 版本升级说明 |
+| [OpenClaw插件配置](./docs/openclaw-plugin-config.md) | 插件配置详解 |
+| [时间记忆](./docs/TIME_MEMORY.md) | ⭐ v7.0 新功能 |
 
 ---
 
