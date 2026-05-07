@@ -1,7 +1,33 @@
 # Multi-Claw Subagents Memory Plugins
 
 > 多智能体多网关多代理多关联子仓库适配的记忆增强插件系统  
-> **版本**: v2.0 | **日期**: 2026-05-08
+> **版本**: v3.0 | **日期**: 2026-05-08  
+> **灵感来源**: [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 一次安装模式
+
+## 🚀 一次对话安装
+
+参考 oh-my-openagent 的 `bunx oh-my-openagent install` 模式，设计零配置安装体验：
+
+```
+add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/myz/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<TOKEN>
+```
+
+或复制以下提示词到 LLM Agent：
+
+```
+Install and configure multi-claw-subagents-memory-plugins by following the instructions here:
+https://raw.githubusercontent.com/code-yeongyu/multi-claw-subagents-memory-plugins/main/docs/INSTALL.md
+```
+
+**完整安装脚本用法**：
+
+```bash
+bash <(curl -sL https://git.osc.life/myz/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
+  --plugins-url https://git.osc.life/myz/multi-claw-subagents-memory-plugins \
+  --gitserver-url https://git.osc.life \
+  --gitserver-token YOUR_GIT_TOKEN \
+  --group claws-memory
+```
 
 ## 项目概述
 
