@@ -76,7 +76,7 @@ multi-claw-subagents-memory-plugins/
 ### 方法一：复制提示词（推荐）
 
 ```
-add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<YOUR_TOKEN>
+add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<YOUR_TOKEN> gitgroup-name=claws-memory
 ```
 
 ### 方法二：安装脚本
@@ -85,7 +85,8 @@ add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/y
 bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
   --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
   --gitserver-url https://git.osc.life \
-  --gitserver-token <YOUR_TOKEN>
+  --gitserver-token <YOUR_TOKEN> \
+  --gitgroup-name claws-memory
 ```
 
 ---
