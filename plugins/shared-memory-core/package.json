@@ -1,0 +1,30 @@
+{
+  "name": "@multi-claw/shared-memory-core",
+  "version": "1.0.0",
+  "description": "Shared memory core library for multi-agent memory plugins",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./git-sync": "./dist/git-sync.js",
+    "./indexer": "./dist/indexer.js",
+    "./access-control": "./dist/access-control.js",
+    "./event-bus": "./dist/event-bus.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "dependencies": {
+    "simple-git": "^3.22.0",
+    "gray-matter": "^4.0.3",
+    "chokidar": "^3.5.3",
+    "eventemitter3": "^5.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.3"
+  }
+}

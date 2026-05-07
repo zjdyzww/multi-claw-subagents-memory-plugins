@@ -1,0 +1,23 @@
+# Multi-Claw Subagents Memory Plugins - Git Submodules Configuration
+# 公共子仓库
+
+[submodule "main"]
+	path = main
+	url = https://git.osc.life/myz/main-memory-shared.git
+	branch = main
+
+[submodule "business"]
+	path = business
+	url = https://git.osc.life/myz/business-memory-shared.git
+	branch = main
+
+[submodule "code"]
+	path = code
+	url = https://git.osc.life/myz/code-memory-shared.git
+	branch = main
+
+# 私有子仓库（仅 OpenClaw 可访问）
+[submodule "openclaw-private"]
+	path = openclaw-private
+	url = https://git.osc.life/myz/openclaw-memory-private.git
+	branch = main
