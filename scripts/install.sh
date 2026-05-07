@@ -1,5 +1,5 @@
 #!/bin/bash
-# install.sh - Multi-Claw Memory Plugins 一次安装脚本
+# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v2
 #
 # 用法:
 #   bash install.sh \
@@ -12,14 +12,14 @@
 #
 # 示例:
 #   bash install.sh \
-#     --plugins-url https://git.osc.life/myz/multi-claw-subagents-memory-plugins \
+#     --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
 #     --gitserver-url https://git.osc.life \
 #     --gitserver-token gho_xxxxxxxxxxxx \
 #     --group claws-memory
 #
 # LLM Agent 用法:
 #   add multi-claw-subagents-memory-plugins where \
-#     plugins-url=https://git.osc.life/myz/multi-claw-subagents-memory-plugins \
+#     plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
 #     gitserver-url=https://git.osc.life \
 #     gitserver-token=<TOKEN>
 
@@ -29,6 +29,10 @@ set -e
 GROUP="${GROUP:-claws-memory}"
 AGENTS="${AGENTS:-openclaw,hermes,claude-code,opencode}"
 LOCAL_PATH="${LOCAL_PATH:-$HOME/.openclaw/memory-plugins}"
+OPENCLAW_PATH="${OPENCLAW_PATH:-$HOME/.openclaw}"
+HERMES_PATH="${HERMES_PATH:-$HOME/.hermes}"
+CLAUDE_PATH="${CLAUDE_PATH:-$HOME/.claude}"
+OPENCODE_PATH="${OPENCODE_PATH:-$HOME/.opencode}"
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
@@ -48,20 +52,22 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
+log_agent() { echo -e "${CYAN}[AGENT]${NC} $1"; }
 
 # 打印横幅
 print_banner() {
   echo ""
   echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
-  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer         ║${NC}"
-  echo -e "${GREEN}║   一次安装，多智能体记忆管理系统                        ║${NC}"
+  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v2     ║${NC}"
+  echo -e "${GREEN}║   一次安装，为每个网关适配记忆宫殿                      ║${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
   echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
   echo ""
@@ -97,7 +103,6 @@ validate_params() {
 test_connection() {
   log_step "测试 Git 服务器连接..."
   
-  # 测试 API 访问
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: token $GITSERVER_TOKEN" \
     "$GITSERVER_URL/api/v1/user" || echo "000")
@@ -113,7 +118,6 @@ test_connection() {
 create_org() {
   log_step "检查/创建组织: $GROUP"
   
-  # 检查组织是否存在
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: token $GITSERVER_TOKEN" \
     "$GITSERVER_URL/api/v1/orgs/$GROUP" || echo "000")
@@ -122,16 +126,20 @@ create_org() {
     log_info "  ✅ 组织已存在"
   elif [[ "$HTTP_CODE" == "404" ]]; then
     log_info "  📦 创建组织..."
+    # 尝试通过用户 API 创建
+    USER=$(curl -s -H "Authorization: token $GITSERVER_TOKEN" \
+      "$GITSERVER_URL/api/v1/user" | grep -o '"login":"[^"]*"' | cut -d'"' -f4)
+    
     RESULT=$(curl -s -X POST \
       -H "Authorization: token $GITSERVER_TOKEN" \
       -H "Content-Type: application/json" \
       "$GITSERVER_URL/api/v1/orgs" \
-      -d "{\"name\":\"$GROUP\",\"description\":\"Multi-Claw Memory System Repositories\",\"visibility\":\"private\"}")
+      -d "{\"username\":\"$USER\",\"name\":\"$GROUP\",\"description\":\"Multi-Claw Memory System Repositories\",\"visibility\":\"private\"}" 2>&1)
     
     if echo "$RESULT" | grep -q '"id"'; then
       log_info "  ✅ 组织创建成功"
     else
-      log_warn "  ⚠️  组织创建失败: $RESULT"
+      log_warn "  ⚠️  组织创建失败，请手动创建: https://git.osc.life/orgs/$GROUP/new"
     fi
   else
     log_warn "  ⚠️  检查组织失败: HTTP $HTTP_CODE"
@@ -146,7 +154,6 @@ create_repo() {
   
   log_info "  创建仓库: $GROUP/$REPO_NAME"
   
-  # 检查仓库是否存在
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: token $GITSERVER_TOKEN" \
     "$GITSERVER_URL/api/v1/repos/$GROUP/$REPO_NAME" 2>/dev/null || echo "000")
@@ -156,7 +163,6 @@ create_repo() {
     return 0
   fi
   
-  # 创建仓库
   RESULT=$(curl -s -X POST \
     -H "Authorization: token $GITSERVER_TOKEN" \
     -H "Content-Type: application/json" \
@@ -166,11 +172,10 @@ create_repo() {
   if echo "$RESULT" | grep -q '"id"'; then
     log_info "    ✅ 创建成功"
   else
-    # 可能已存在，忽略错误
     if echo "$RESULT" | grep -q "already"; then
       log_info "    ✅ 仓库已存在"
     else
-      log_warn "    ⚠️  创建失败: $(echo $RESULT | head -c 100)"
+      log_warn "    ⚠️  创建失败"
     fi
   fi
 }
@@ -186,14 +191,9 @@ create_repos() {
   
   # 私有仓库
   for agent in $(echo "$AGENTS" | tr ',' ' '); do
-    AGENT_UPPER=$(echo "$agent" | tr '[:lower:]' '[:upper:]')
     AGENT_DISPLAY=$(echo "$agent" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
     create_repo "${agent}-memory-private" "${AGENT_DISPLAY} 私有记忆仓 - 存储个体上下文、偏好设置"
   done
-  
-  # 主插件仓
-  PLUGIN_REPO_NAME=$(basename "$PLUGINS_URL")
-  create_repo "$PLUGIN_REPO_NAME" "Multi-Claw Memory Plugins 插件源码" "false"
 }
 
 # 克隆主仓库
@@ -210,7 +210,7 @@ clone_main_repo() {
     log_info "  📦 更新现有仓库..."
     cd "$LOCAL_PATH"
     git pull origin main 2>/dev/null || git pull origin main --rebase
-    git submodule update --init --recursive
+    git submodule update --init --recursive 2>/dev/null || true
   else
     log_info "  📥 克隆仓库..."
     git clone --recursive "$PLUGINS_URL" "$LOCAL_PATH"
@@ -219,23 +219,154 @@ clone_main_repo() {
   log_info "  ✅ 主仓库就绪"
 }
 
-# 初始化子仓库
-init_submodules() {
-  log_step "初始化子仓库为独立仓库..."
+# ============================================================
+# 为每个网关安装记忆宫殿
+# ============================================================
+
+# 安装 OpenClaw 记忆宫殿
+install_openclaw() {
+  log_agent "安装 OpenClaw 记忆宫殿..."
   
-  cd "$LOCAL_PATH"
+  mkdir -p "$OPENCLAW_PATH/memory-palace"
+  mkdir -p "$OPENCLAW_PATH/workspace/skills"
+  
+  # 复制记忆宫殿规则
+  cp -r "$LOCAL_PATH/.memory-palace/openclaw/"* "$OPENCLAW_PATH/memory-palace/" 2>/dev/null || true
+  
+  # 复制 Skills
+  cp "$LOCAL_PATH/agents/openclaw/SKILL.md" "$OPENCLAW_PATH/workspace/skills/memory-palace.md" 2>/dev/null || true
+  
+  # 复制 memory-agent-files 中的核心文件
+  mkdir -p "$OPENCLAW_PATH/memory-agent-files"
+  cp -r "$LOCAL_PATH/.memory-agent-files/"* "$OPENCLAW_PATH/memory-agent-files/" 2>/dev/null || true
+  
+  # 初始化 Git 仓库（如果不存在）
+  if [[ ! -d "$OPENCLAW_PATH/.git" ]]; then
+    cd "$OPENCLAW_PATH"
+    git init 2>/dev/null || true
+    git remote add origin "${GITSERVER_URL}/${GROUP}/openclaw-memory-private.git" 2>/dev/null || true
+  fi
+  
+  log_info "  ✅ OpenClaw 记忆宫殿安装完成"
+}
+
+# 安装 Hermes 记忆宫殿
+install_hermes() {
+  log_agent "安装 Hermes 记忆宫殿..."
+  
+  mkdir -p "$HERMES_PATH/memories/L1_CORE"
+  mkdir -p "$HERMES_PATH/memories/L2_BUSINESS"
+  mkdir -p "$HERMES_PATH/memories/L3_CONFIG"
+  mkdir -p "$HERMES_PATH/memories/L4_INDEX"
+  mkdir -p "$HERMES_PATH/skills/productivity/dual-thinking"
+  mkdir -p "$HERMES_PATH/skills/productivity/memory-manager"
+  mkdir -p "$HERMES_PATH/archive/residuals"
+  mkdir -p "$HERMES_PATH/episodes"
+  
+  # 复制记忆宫殿规则
+  cp -r "$LOCAL_PATH/.memory-palace/hermes/"* "$HERMES_PATH/memories/" 2>/dev/null || true
+  
+  # 复制 Skills
+  cp "$LOCAL_PATH/agents/hermes/SKILL.md" "$HERMES_PATH/skills/productivity/memory-palace.md" 2>/dev/null || true
+  
+  # 复制 memory-agent-files
+  cp -r "$LOCAL_PATH/.memory-agent-files/"* "$HERMES_PATH/memories/" 2>/dev/null || true
+  
+  # 初始化 Git
+  if [[ ! -d "$HERMES_PATH/.git" ]]; then
+    cd "$HERMES_PATH"
+    git init 2>/dev/null || true
+    git remote add origin "${GITSERVER_URL}/${GROUP}/hermes-memory-private.git" 2>/dev/null || true
+  fi
+  
+  log_info "  ✅ Hermes 记忆宫殿安装完成"
+}
+
+# 安装 Claude Code 记忆宫殿
+install_claude_code() {
+  log_agent "安装 Claude Code 记忆宫殿..."
+  
+  mkdir -p "$CLAUDE_PATH/agent-memory"
+  mkdir -p "$CLAUDE_PATH/projects"
+  mkdir -p "$CLAUDE_PATH/skills"
+  mkdir -p "$CLAUDE_PATH/memories/L1_CORE"
+  mkdir -p "$CLAUDE_PATH/memories/L2_BUSINESS"
+  mkdir -p "$CLAUDE_PATH/memories/L3_CONFIG"
+  
+  # 复制记忆宫殿规则
+  cp -r "$LOCAL_PATH/.memory-palace/claude-code/"* "$CLAUDE_PATH/agent-memory/" 2>/dev/null || true
+  
+  # 复制 Skills
+  cp "$LOCAL_PATH/agents/claude-code/SKILL.md" "$CLAUDE_PATH/skills/memory-palace.md" 2>/dev/null || true
+  
+  # 复制 memory-agent-files
+  mkdir -p "$CLAUDE_PATH/memory-agent-files"
+  cp -r "$LOCAL_PATH/.memory-agent-files/"* "$CLAUDE_PATH/memory-agent-files/" 2>/dev/null || true
+  
+  # 初始化 Git
+  if [[ ! -d "$CLAUDE_PATH/.git" ]]; then
+    cd "$CLAUDE_PATH"
+    git init 2>/dev/null || true
+    git remote add origin "${GITSERVER_URL}/${GROUP}/claude-code-memory-private.git" 2>/dev/null || true
+  fi
+  
+  log_info "  ✅ Claude Code 记忆宫殿安装完成"
+}
+
+# 安装 OpenCode 记忆宫殿
+install_opencode() {
+  log_agent "安装 OpenCode 记忆宫殿..."
+  
+  mkdir -p "$OPENCODE_PATH/memory/L1_CORE"
+  mkdir -p "$OPENCODE_PATH/memory/L2_BUSINESS"
+  mkdir -p "$OPENCODE_PATH/memory/L3_CONFIG"
+  mkdir -p "$OPENCODE_PATH/memory/L4_INDEX"
+  mkdir -p "$OPENCODE_PATH/projects"
+  mkdir -p "$OPENCODE_PATH/skills"
+  mkdir -p "$OPENCODE_PATH/cache"
+  
+  # 复制记忆宫殿规则
+  cp -r "$LOCAL_PATH/.memory-palace/opencode/"* "$OPENCODE_PATH/memory/" 2>/dev/null || true
+  
+  # 复制 Skills
+  cp "$LOCAL_PATH/agents/opencode/SKILL.md" "$OPENCODE_PATH/skills/memory-palace.md" 2>/dev/null || true
+  
+  # 复制 memory-agent-files
+  mkdir -p "$OPENCODE_PATH/memory-agent-files"
+  cp -r "$LOCAL_PATH/.memory-agent-files/"* "$OPENCODE_PATH/memory-agent-files/" 2>/dev/null || true
+  
+  # 初始化 Git
+  if [[ ! -d "$OPENCODE_PATH/.git" ]]; then
+    cd "$OPENCODE_PATH"
+    git init 2>/dev/null || true
+    git remote add origin "${GITSERVER_URL}/${GROUP}/opencode-memory-private.git" 2>/dev/null || true
+  fi
+  
+  log_info "  ✅ OpenCode 记忆宫殿安装完成"
+}
+
+# 安装所有网关的记忆宫殿
+install_all_agents() {
+  log_step "为每个网关安装记忆宫殿..."
   
   for agent in $(echo "$AGENTS" | tr ',' ' '); do
-    REPO_PATH="${GITSERVER_URL}/${GROUP}/${agent}-memory-private.git"
-    LOCAL_SUBMODULE="${agent}-memory-private"
-    
-    if [[ -d "$LOCAL_SUBMODULE/.git" ]]; then
-      log_info "  ✅ $LOCAL_SUBMODULE 已存在"
-    else
-      log_info "  📥 克隆 $REPO_PATH"
-      git clone "$REPO_PATH" "$LOCAL_SUBMODULE" 2>/dev/null || \
-        log_warn "    ⚠️  克隆失败，请手动处理"
-    fi
+    case "$agent" in
+      openclaw)
+        install_openclaw
+        ;;
+      hermes)
+        install_hermes
+        ;;
+      claude-code)
+        install_claude_code
+        ;;
+      opencode)
+        install_opencode
+        ;;
+      *)
+        log_warn "  ⚠️  未知网关: $agent"
+        ;;
+    esac
   done
 }
 
@@ -269,8 +400,7 @@ update_openclaw_config() {
   
   if [[ -f "$CONFIG_FILE" ]]; then
     log_info "  📄 更新现有配置..."
-    # TODO: 使用 jq 合并配置
-    log_warn "  ⚠️  请手动更新 $CONFIG_FILE"
+    log_warn "  ⚠️  请手动更新 $CONFIG_FILE 添加 memory 插件配置"
   else
     log_info "  📄 创建新配置..."
     cat > "$CONFIG_FILE" << EOF
@@ -284,7 +414,7 @@ update_openclaw_config() {
           "businessRepoUrl": "${GITSERVER_URL}/${GROUP}/business-memory-shared.git",
           "codeRepoUrl": "${GITSERVER_URL}/${GROUP}/code-memory-shared.git",
           "privateRepoUrl": "${GITSERVER_URL}/${GROUP}/openclaw-memory-private.git",
-          "localPath": "${HOME}/.openclaw/memory",
+          "localPath": "${OPENCLAW_PATH}/memory",
           "syncInterval": 300000,
           "syncStrategy": "rebase"
         }
@@ -303,7 +433,7 @@ verify_installation() {
   
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo "  安装完成！以下是验证命令："
+  echo "  安装完成！验证命令："
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
   echo "  1. 重启 OpenClaw Gateway:"
@@ -316,6 +446,19 @@ verify_installation() {
   echo "     memory.status"
   echo "     memory.save --repo main --path test.md --content '# Test'"
   echo ""
+  echo "  4. 各网关记忆宫殿位置:"
+  echo "     OpenClaw:   $OPENCLAW_PATH/memory-palace/"
+  echo "     Hermes:     $HERMES_PATH/memories/"
+  echo "     Claude Code: $CLAUDE_PATH/agent-memory/"
+  echo "     OpenCode:   $OPENCODE_PATH/memory/"
+  echo ""
+  echo "  5. 仓库地址:"
+  echo "     主仓库: ${GITSERVER_URL}/${GROUP}/main-memory-shared"
+  echo "     OpenClaw: ${GITSERVER_URL}/${GROUP}/openclaw-memory-private"
+  echo "     Hermes: ${GITSERVER_URL}/${GROUP}/hermes-memory-private"
+  echo "     Claude Code: ${GITSERVER_URL}/${GROUP}/claude-code-memory-private"
+  echo "     OpenCode: ${GITSERVER_URL}/${GROUP}/opencode-memory-private"
+  echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
 }
@@ -324,7 +467,7 @@ verify_installation() {
 main() {
   print_banner
   
-  log_info "开始安装 Multi-Claw Memory Plugins..."
+  log_info "开始安装 Multi-Claw Memory Plugins v2..."
   echo ""
   
   validate_params
@@ -332,7 +475,7 @@ main() {
   create_org
   create_repos
   clone_main_repo
-  init_submodules
+  install_all_agents
   configure_plugins
   update_openclaw_config
   

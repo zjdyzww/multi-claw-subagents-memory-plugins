@@ -1,7 +1,7 @@
 # Multi-Claw Subagents Memory Plugins
 
 > **多智能体多网关多代理记忆增强插件系统**  
-> **版本**: v3.0 | **日期**: 2026-05-08  
+> **版本**: v4.0 | **日期**: 2026-05-08  
 > **灵感来源**: [oh-my-openagent](https://github.com/code-yeongyu/oh-my-openagent) 一次安装模式
 
 ---
@@ -14,6 +14,7 @@
 - 🌐 **多网关路由**: OpenClaw + Hermes + Claude-Code + OpenCode 分工协作
 - 📦 **三地一致性**: 表象 ↔ MEMORY.md ↔ Gitea 实时同步
 - ⚡ **零配置安装**: 一次对话即可完成部署
+- 🏛️ **记忆宫殿**: 每个网关独立的记忆宫殿规则和技能
 
 ---
 
@@ -22,50 +23,50 @@
 ```
 multi-claw-subagents-memory-plugins/
 │
-├── .memory-agent-files/              # ⭐ 记忆强化核心文件（来自 memory-agent-plugins）
-│   ├── AGENT_PROMPT.md             # 完整代理提示词
-│   ├── SKILL_DUAL_THINKING.md      # 双系统协同技能
-│   ├── SKILL_MEMORY_MANAGER.md      # 记忆管理器技能
-│   ├── MEMORY_SYSTEM.md             # 记忆系统设计
-│   ├── MEMORY_INDEX.md             # 记忆索引结构
-│   ├── CORE.md                    # 核心架构
-│   ├── CONFIDENCE_PROPAGATION.md  # 置信度传播
-│   ├── PATH_ANALYSIS.md            # 路径分析
-│   ├── PERSONA_COORDINATOR.md      # 角色协调器
-│   ├── RETRIEVAL_ROUTER.md         # 检索路由
-│   ├── RESIDUAL_QUEUE.md           # 残差队列
-│   ├── VERSION_*.md                # 版本管理
-│   ├── HERMES_INTEGRATION.md       # Hermes 集成指南
-│   ├── BUSINESS/                   # 业务示例
-│   ├── episodes/                   # 会话片段
+├── .memory-palace/                  # ⭐ 每个网关的记忆宫殿
+│   ├── openclaw/MEMORY_PALACE.md  # OpenClaw 记忆宫殿
+│   ├── hermes/MEMORY_PALACE.md   # Hermes 记忆宫殿
+│   ├── claude-code/MEMORY_PALACE.md # Claude Code 记忆宫殿
+│   └── opencode/MEMORY_PALACE.md  # OpenCode 记忆宫殿
+│
+├── agents/                          # ⭐ 每个网关的技能
+│   ├── openclaw/SKILL.md          # OpenClaw 技能
+│   ├── hermes/SKILL.md           # Hermes 技能
+│   ├── claude-code/SKILL.md      # Claude Code 技能
+│   └── opencode/SKILL.md         # OpenCode 技能
+│
+├── .memory-agent-files/            # ⭐ 记忆强化核心文件
+│   ├── AGENT_PROMPT.md           # 完整代理提示词
+│   ├── SKILL_DUAL_THINKING.md   # 双系统协同技能
+│   ├── SKILL_MEMORY_MANAGER.md   # 记忆管理器技能
+│   ├── MEMORY_SYSTEM.md         # 记忆系统设计
+│   ├── MEMORY_INDEX.md          # 记忆索引结构
+│   ├── CORE.md                  # 核心架构
+│   ├── CONFIDENCE_PROPAGATION.md # 置信度传播
+│   ├── PATH_ANALYSIS.md         # 路径分析
+│   ├── PERSONA_COORDINATOR.md   # 角色协调器
+│   ├── RETRIEVAL_ROUTER.md      # 检索路由
+│   ├── RESIDUAL_QUEUE.md        # 残差队列
+│   ├── VERSION_*.md             # 版本管理
+│   ├── HERMES_INTEGRATION.md    # Hermes 集成指南
+│   ├── BUSINESS/                # 业务示例
+│   ├── episodes/                # 会话片段
 │   └── 论文_疯狂的简洁_记忆强化框架.md
 │
-├── plugins/                         # 插件源码
-│   ├── shared-memory-core/          # 共享核心库
-│   │   ├── src/
-│   │   │   ├── git-sync.ts        # Git 同步管理
-│   │   │   ├── indexer.ts         # 索引引擎
-│   │   │   ├── access-control.ts  # 访问控制
-│   │   │   └── event-bus.ts      # 事件总线
-│   │   └── package.json
-│   │
-│   ├── openclaw-memory-plugin/     # OpenClaw 插件
-│   └── openclaw-memory-plugin/skills/openclaw-memory-skill/SKILL.md
+├── plugins/                        # 插件源码
+│   ├── shared-memory-core/       # 共享核心库
+│   └── openclaw-memory-plugin/   # OpenClaw 插件
 │
-├── .gateways/                       # 网关配置
-│   ├── openclaw-gateway.md
-│   └── hermes-gateway.md
+├── scripts/                        # 管理脚本
+│   ├── install.sh               # ⭐ 一次安装脚本 v2
+│   ├── init-repos.sh            # 初始化子仓库
+│   ├── sync-memory.sh           # 同步脚本
+│   └── benchmark.sh             # 性能测试
 │
-├── scripts/                         # 管理脚本
-│   ├── install.sh                  # ⭐ 一次安装脚本
-│   ├── init-repos.sh               # 初始化子仓库
-│   ├── sync-memory.sh              # 同步脚本
-│   └── benchmark.sh                # 性能测试
-│
-└── docs/                           # 文档
-    ├── INSTALL.md                   # ⭐ 安装指南
-    ├── architecture.md              # 架构设计
-    └── user-guide.md              # 用户指南
+└── docs/                          # 文档
+    ├── INSTALL.md               # 安装指南
+    ├── architecture.md          # 架构设计
+    └── user-guide.md           # 用户指南
 ```
 
 ---
@@ -89,6 +90,40 @@ bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugin
 
 ---
 
+## 记忆宫殿架构
+
+### 1. 每个网关独立的记忆宫殿
+
+| 网关 | 记忆宫殿位置 | 私有仓库 |
+|------|-------------|----------|
+| **OpenClaw** | `~/.openclaw/memory-palace/` | `claws-memory/openclaw-memory-private` |
+| **Hermes** | `~/.hermes/memories/` | `claws-memory/hermes-memory-private` |
+| **Claude Code** | `~/.claude/agent-memory/` | `claws-memory/claude-code-memory-private` |
+| **OpenCode** | `~/.opencode/memory/` | `claws-memory/opencode-memory-private` |
+
+### 2. 记忆宫殿内容
+
+每个记忆宫殿包含：
+
+```
+.memory-palace/{gateway}/
+├── MEMORY_PALACE.md    # 记忆宫殿规则
+├── L1_CORE/            # 核心记忆
+├── L2_BUSINESS/        # 业务记忆
+├── L3_CONFIG/          # 配置记忆
+└── L4_INDEX/          # 索引记忆
+```
+
+### 3. 技能安装
+
+每个网关安装时会获得：
+
+```
+agents/{gateway}/SKILL.md  →  网关的 skills/ 目录
+```
+
+---
+
 ## 双系统协同工作流
 
 ```
@@ -102,14 +137,20 @@ USER 对话
     │ 完整记忆表象
     ▼
 ┌─────────────────────────────┐
-│ System 1: 淘金式提炼        │
-│ 7条标准筛选 → 写入MEMORY.md │
+│ Layer 1: 主动消解           │
+│ 本轮残差立即处理             │
 └─────────────────────────────┘
-    │ 一致性保证
+    │ 未消解残差
     ▼
 ┌─────────────────────────────┐
-│ Gitea 同步                │
-│ 定时 10:00/22:00 + 即时重大变更 │
+│ System 1: 淘金式提炼        │
+│ 7条标准筛选 → 写入 MEMORY.md │
+└─────────────────────────────┘
+    │ 置信度传播
+    ▼
+┌─────────────────────────────┐
+│ Gitea 同步                  │
+│ 10:00/22:00 + 重大变更     │
 └─────────────────────────────┘
 ```
 
@@ -143,7 +184,7 @@ System 2 表象（会话内存）  ←→  MEMORY.md（本地，~2200字）  ←
 
 ---
 
-## 记忆索引结构
+## 记忆层级结构
 
 ```
 MEMORY.md
@@ -153,17 +194,12 @@ MEMORY.md
 └── L4_INDEX        # 快速检索索引
 ```
 
----
-
-## 插件核心功能
-
-| 功能 | 命令 | 说明 |
-|------|------|------|
-| 保存记忆 | `memory.save --repo main --path "rules/new-rule.md"` | 保存到指定仓库 |
-| 加载记忆 | `memory.load --repo main --path "rules/new-rule.md"` | 加载记忆内容 |
-| 搜索记忆 | `memory.search --query "关键词"` | 全文搜索 |
-| 同步记忆 | `memory.sync --repos all` | 同步所有仓库 |
-| 查看状态 | `memory.status` | 查看同步状态 |
+| 层级 | 名称 | 内容 | 大小 |
+|------|------|------|------|
+| L1 | 核心 | 身份、排他规则、核心协议 | ~500字 |
+| L2 | 业务 | 项目上下文、团队信息 | ~500字/业务域 |
+| L3 | 配置 | 运行环境、服务地址 | ~500字 |
+| L4 | 索引 | 快速检索引用 | ~200字 |
 
 ---
 
@@ -183,7 +219,29 @@ MEMORY.md
 
 ---
 
+## 插件核心功能
+
+| 功能 | 命令 | 说明 |
+|------|------|------|
+| 保存记忆 | `memory.save --repo main --path "rules/new-rule.md"` | 保存到指定仓库 |
+| 加载记忆 | `memory.load --repo main --path "rules/new-rule.md"` | 加载记忆内容 |
+| 搜索记忆 | `memory.search --query "关键词"` | 全文/向量搜索 |
+| 同步记忆 | `memory.sync --repos all` | 同步所有仓库 |
+| 广播记忆 | `memory.broadcast --event decision` | 广播到所有网关 |
+| 查看状态 | `memory.status` | 查看同步状态 |
+
+---
+
 ## 核心文件说明
+
+### 记忆宫殿文件
+
+| 文件 | 说明 |
+|------|------|
+| `MEMORY_PALACE.md` | 每个网关的记忆宫殿规则 |
+| `SKILL.md` | 每个网关的记忆技能 |
+
+### 记忆强化核心文件
 
 | 文件 | 说明 |
 |------|------|
