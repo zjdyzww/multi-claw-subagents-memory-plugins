@@ -76,7 +76,7 @@ multi-claw-subagents-memory-plugins/
 ### 方法一：复制提示词（推荐）
 
 ```
-add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<YOUR_TOKEN> gitgroup-name=claws-memory agents=hermes:1,openclaw:3,opencode:2,claude-code:0
+add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<YOUR_TOKEN> gitgroup-name=claws-memory
 ```
 
 **参数说明：**
@@ -84,16 +84,6 @@ add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/y
 - `gitserver-url`: Git 服务器地址
 - `gitserver-token`: 访问令牌
 - `gitgroup-name`: Git 组/组织名称
-- `agents`: 各类型私有仓库数量，格式 `类型:数量,类型:数量`
-  - `hermes:N` - Hermes 私有仓库数量
-  - `openclaw:N` - OpenClaw 私有仓库数量
-  - `opencode:N` - OpenCode 私有仓库数量
-  - `claude-code:N` - Claude Code 私有仓库数量
-
-**示例：**
-- `agents=hermes:1,openclaw:1,opencode:1,claude-code:1` - 每种1个
-- `agents=hermes:1,openclaw:3,opencode:2,claude-code:0` - OpenClaw 3个，OpenCode 2个，Claude Code 0个
-- `agents=openclaw:1` - 仅 OpenClaw 1个
 
 ### 方法二：安装脚本
 
@@ -102,8 +92,22 @@ bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugin
   --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
   --gitserver-url https://git.osc.life \
   --gitserver-token <YOUR_TOKEN> \
-  --gitgroup-name claws-memory \
-  --agents hermes:1,openclaw:3,opencode:2,claude-code:0
+  --gitgroup-name claws-memory
+```
+
+### 动态增加私有仓库
+
+安装后，可根据需要动态增加私有仓库数量：
+
+```bash
+# 增加 OpenClaw 私有仓库到 3 个
+bash install.sh --add-agent openclaw:3 --gitgroup-name claws-memory
+
+# 增加 OpenCode 私有仓库到 2 个
+bash install.sh --add-agent opencode:2 --gitgroup-name claws-memory
+
+# 查看当前配置
+bash install.sh --status --gitgroup-name claws-memory
 ```
 
 ---

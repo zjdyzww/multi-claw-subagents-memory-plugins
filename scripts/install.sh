@@ -1,35 +1,34 @@
 #!/bin/bash
-# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v5.0
+# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v6.0
 #
 # 功能:
-# 1. 创建记忆仓库（支持动态数量的私有仓库）
+# 1. 创建记忆仓库（默认每种类型1个）
 # 2. 安装记忆宫殿到各网关
-# 3. 配置插件（可选）
+# 3. 动态增加私有仓库数量
 #
 # 用法:
+#   # 初始安装（默认每种1个）
 #   bash install.sh \
 #     --plugins-url <URL> \
 #     --gitserver-url <URL> \
 #     --gitserver-token <TOKEN> \
-#     --gitgroup-name <group-name> \
-#     [--agents hermes:1,openclaw:3,opencode:2,claude-code:0] \
-#     [--local-path <path>]
+#     --gitgroup-name <group-name>
 #
-# 示例:
+#   # 动态增加私有仓库
 #   bash install.sh \
-#     --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
-#     --gitserver-url https://git.osc.life \
-#     --gitserver-token gho_xxxxxxxxxxxx \
-#     --gitgroup-name claws-memory \
-#     --agents hermes:1,openclaw:3,opencode:2,claude-code:0
+#     --add-agent openclaw:3 \
+#     --gitgroup-name <group-name> \
+#     --gitserver-token <TOKEN>
+#
+#   # 查看状态
+#   bash install.sh --status --gitgroup-name <group-name>
 #
 # LLM Agent 用法:
 #   add multi-claw-subagents-memory-plugins where \
 #     plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
 #     gitserver-url=https://git.osc.life \
 #     gitserver-token=<TOKEN> \
-#     gitgroup-name=claws-memory \
-#     agents=hermes:1,openclaw:3,opencode:2,claude-code:0
+#     gitgroup-name=claws-memory
 
 set -e
 
@@ -42,10 +41,15 @@ CLAUDE_PATH="${CLAUDE_PATH:-$HOME/.claude}"
 OPENCODE_PATH="${OPENCODE_PATH:-$HOME/.opencode}"
 
 # 默认：每种类型1个
-HERMES_COUNT="${HERMES_COUNT:-1}"
-OPENCLAW_COUNT="${OPENCLAW_COUNT:-1}"
-OPENCODE_COUNT="${OPENCODE_COUNT:-1}"
-CLAUDE_CODE_COUNT="${CLAUDE_CODE_COUNT:-1}"
+HERMES_COUNT=1
+OPENCLAW_COUNT=1
+OPENCODE_COUNT=1
+CLAUDE_CODE_COUNT=1
+
+# 操作模式
+MODE="install"
+ADD_AGENT_TYPE=""
+ADD_AGENT_COUNT=""
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
@@ -56,8 +60,15 @@ while [[ $# -gt 0 ]]; do
     --gitgroup-name) GITGROUP="$2"; shift 2 ;;
     --gitgroup) GITGROUP="$2"; shift 2 ;;
     --group) GITGROUP="$2"; shift 2 ;;
+    --add-agent)
+      MODE="add-agent"
+      IFS=':' read -ra KV <<< "$2"
+      ADD_AGENT_TYPE="${KV[0]}"
+      ADD_AGENT_COUNT="${KV[1]}"
+      shift 2 ;;
+    --status) MODE="status"; shift ;;
     --agents)
-      # 解析 agents=hermes:1,openclaw:3,opencode:2,claude-code:0
+      # 解析 agents=hermes:1,openclaw:3,opencode:2,claude-code:0（兼容旧格式）
       IFS=',' read -ra AGENT_SPECS <<< "$2"
       for spec in "${AGENT_SPECS[@]}"; do
         IFS=':' read -ra KV <<< "$spec"
@@ -86,7 +97,6 @@ log_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 log_step() { echo -e "${BLUE}[STEP]${NC} $1"; }
-log_agent() { echo -e "${CYAN}[AGENT]${NC} $1"; }
 log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 
 # 打印横幅
@@ -94,45 +104,11 @@ print_banner() {
   echo ""
   echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
-  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v5.0   ║${NC}"
-  echo -e "${GREEN}║   支持动态数量的私有仓库                              ║${NC}"
+  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v6.0 ║${NC}"
+  echo -e "${GREEN}║   一次安装 + 动态扩展                              ║${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
   echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
   echo ""
-}
-
-# 验证参数
-validate_params() {
-  if [[ -z "$PLUGINS_URL" ]]; then
-    log_error "缺少参数: --plugins-url"
-    exit 1
-  fi
-  
-  if [[ -z "$GITSERVER_URL" ]]; then
-    log_error "缺少参数: --gitserver-url"
-    exit 1
-  fi
-  
-  if [[ -z "$GITSERVER_TOKEN" ]]; then
-    log_error "缺少参数: --gitserver-token"
-    exit 1
-  fi
-  
-  if [[ -z "$GITGROUP" ]]; then
-    log_error "缺少参数: --gitgroup-name"
-    exit 1
-  fi
-  
-  log_info "参数验证通过"
-  log_info "  插件仓库: $PLUGINS_URL"
-  log_info "  Git 服务器: $GITSERVER_URL"
-  log_info "  Git 组名: $GITGROUP"
-  log_info "  智能体数量:"
-  log_info "    Hermes: $HERMES_COUNT"
-  log_info "    OpenClaw: $OPENCLAW_COUNT"
-  log_info "    OpenCode: $OPENCODE_COUNT"
-  log_info "    Claude Code: $CLAUDE_CODE_COUNT"
-  log_info "  安装路径: $LOCAL_PATH"
 }
 
 # 测试 Git 服务器连接
@@ -145,24 +121,22 @@ test_connection() {
   
   if [[ "$HTTP_CODE" == "200" ]]; then
     log_info "  ✅ 连接成功"
+    return 0
   else
-    log_warn "  ⚠️  API 返回: $HTTP_CODE"
+    log_error "  ❌ 连接失败: HTTP $HTTP_CODE"
+    return 1
   fi
 }
 
 # 检查组织是否存在
 check_org() {
-  log_step "检查组织: $GITGROUP"
-  
   HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
     -H "Authorization: token $GITSERVER_TOKEN" \
     "$GITSERVER_URL/api/v1/orgs/$GITGROUP" || echo "000")
   
   if [[ "$HTTP_CODE" == "200" ]]; then
-    log_success "  ✅ 组织已存在"
     return 0
   else
-    log_error "  ❌ 组织不存在: $GITGROUP"
     return 1
   fi
 }
@@ -179,7 +153,7 @@ create_repo() {
     "$GITSERVER_URL/api/v1/repos/$GITGROUP/$REPO_NAME" 2>/dev/null || echo "000")
   
   if [[ "$HTTP_CODE" == "200" ]]; then
-    log_info "    ✅ $REPO_NAME (已存在)"
+    echo "  ⏭️  $REPO_NAME (已存在)"
     return 0
   fi
   
@@ -191,17 +165,33 @@ create_repo() {
     -d "{\"name\":\"$REPO_NAME\",\"description\":\"$REPO_DESC\",\"private\":$REPO_PRIVATE,\"auto_init\":true,\"default_branch\":\"main\"}" 2>&1)
   
   if echo "$RESULT" | grep -q '"id"'; then
-    log_success "    ✅ $REPO_NAME (创建成功)"
+    echo "  ✅ $REPO_NAME (创建成功)"
   else
     if echo "$RESULT" | grep -qi "already"; then
-      log_info "    ✅ $REPO_NAME (已存在)"
+      echo "  ⏭️  $REPO_NAME (已存在)"
     else
-      log_error "    ❌ $REPO_NAME (失败)"
+      echo "  ❌ $REPO_NAME (失败)"
     fi
   fi
 }
 
-# 创建公共仓库
+# 创建单个类型的私有仓库
+create_private_repos_for_type() {
+  local TYPE="$1"
+  local COUNT="$2"
+  local DISPLAY_NAME="$3"
+  
+  if [[ "$COUNT" -le 0 ]]; then
+    return
+  fi
+  
+  echo "  创建 $DISPLAY_NAME 私有仓库 ($COUNT 个):"
+  for i in $(seq 1 "$COUNT"); do
+    create_repo "${TYPE}-${i}-memory-private" "$DISPLAY_NAME #${i} 私有记忆仓"
+  done
+}
+
+# 创建所有公共仓库
 create_public_repos() {
   log_step "创建公共记忆仓库..."
   
@@ -210,49 +200,14 @@ create_public_repos() {
   create_repo "code-memory-shared" "Multi-Claw 公共代码子仓 - 存储代码片段、设计模式、运维脚本"
 }
 
-# 创建私有仓库（动态数量）
-create_private_repos() {
+# 创建所有私有仓库
+create_all_private_repos() {
   log_step "创建私有记忆仓库..."
   
-  # Hermes 私有仓库
-  if [[ "$HERMES_COUNT" -gt 0 ]]; then
-    log_agent "Hermes 私有仓库 ($HERMES_COUNT 个):"
-    for i in $(seq 1 "$HERMES_COUNT"); do
-      create_repo "hermes-${i}-memory-private" "Hermes #${i} 私有记忆仓 - 存储个体上下文"
-    done
-  else
-    log_info "  ⏭️  Hermes: 0 个 (跳过)"
-  fi
-  
-  # OpenClaw 私有仓库
-  if [[ "$OPENCLAW_COUNT" -gt 0 ]]; then
-    log_agent "OpenClaw 私有仓库 ($OPENCLAW_COUNT 个):"
-    for i in $(seq 1 "$OPENCLAW_COUNT"); do
-      create_repo "openclaw-${i}-memory-private" "OpenClaw #${i} 私有记忆仓 - 存储个体上下文"
-    done
-  else
-    log_info "  ⏭️  OpenClaw: 0 个 (跳过)"
-  fi
-  
-  # OpenCode 私有仓库
-  if [[ "$OPENCODE_COUNT" -gt 0 ]]; then
-    log_agent "OpenCode 私有仓库 ($OPENCODE_COUNT 个):"
-    for i in $(seq 1 "$OPENCODE_COUNT"); do
-      create_repo "opencode-${i}-memory-private" "OpenCode #${i} 私有记忆仓 - 存储个体上下文"
-    done
-  else
-    log_info "  ⏭️  OpenCode: 0 个 (跳过)"
-  fi
-  
-  # Claude Code 私有仓库
-  if [[ "$CLAUDE_CODE_COUNT" -gt 0 ]]; then
-    log_agent "Claude Code 私有仓库 ($CLAUDE_CODE_COUNT 个):"
-    for i in $(seq 1 "$CLAUDE_CODE_COUNT"); do
-      create_repo "claude-code-${i}-memory-private" "Claude Code #${i} 私有记忆仓 - 存储个体上下文"
-    done
-  else
-    log_info "  ⏭️  Claude Code: 0 个 (跳过)"
-  fi
+  create_private_repos_for_type "hermes" "$HERMES_COUNT" "Hermes"
+  create_private_repos_for_type "openclaw" "$OPENCLAW_COUNT" "OpenClaw"
+  create_private_repos_for_type "opencode" "$OPENCODE_COUNT" "OpenCode"
+  create_private_repos_for_type "claude-code" "$CLAUDE_CODE_COUNT" "Claude Code"
 }
 
 # 克隆主仓库
@@ -280,7 +235,7 @@ clone_main_repo() {
 
 # 安装 OpenClaw 记忆宫殿
 install_openclaw() {
-  log_agent "安装 OpenClaw 记忆宫殿..."
+  log_info "安装 OpenClaw 记忆宫殿..."
   
   mkdir -p "$OPENCLAW_PATH/memory-palace"
   mkdir -p "$OPENCLAW_PATH/workspace/skills"
@@ -300,7 +255,7 @@ install_openclaw() {
 
 # 安装 Hermes 记忆宫殿
 install_hermes() {
-  log_agent "安装 Hermes 记忆宫殿..."
+  log_info "安装 Hermes 记忆宫殿..."
   
   mkdir -p "$HERMES_PATH/memories/L1_CORE"
   mkdir -p "$HERMES_PATH/memories/L2_BUSINESS"
@@ -326,11 +281,10 @@ install_hermes() {
 # 安装 Claude Code 记忆宫殿
 install_claude_code() {
   if [[ "$CLAUDE_CODE_COUNT" -eq 0 ]]; then
-    log_info "  ⏭️  Claude Code: 0 个，跳过安装"
     return
   fi
   
-  log_agent "安装 Claude Code 记忆宫殿..."
+  log_info "安装 Claude Code 记忆宫殿..."
   
   mkdir -p "$CLAUDE_PATH/agent-memory"
   mkdir -p "$CLAUDE_PATH/projects"
@@ -355,11 +309,10 @@ install_claude_code() {
 # 安装 OpenCode 记忆宫殿
 install_opencode() {
   if [[ "$OPENCODE_COUNT" -eq 0 ]]; then
-    log_info "  ⏭️  OpenCode: 0 个，跳过安装"
     return
   fi
   
-  log_agent "安装 OpenCode 记忆宫殿..."
+  log_info "安装 OpenCode 记忆宫殿..."
   
   mkdir -p "$OPENCODE_PATH/memory/L1_CORE"
   mkdir -p "$OPENCODE_PATH/memory/L2_BUSINESS"
@@ -382,86 +335,222 @@ install_opencode() {
   log_success "  ✅ OpenCode 记忆宫殿安装完成"
 }
 
-# 安装所有网关的记忆宫殿
-install_all_agents() {
-  log_step "为每个网关安装记忆宫殿..."
-  
-  # Hermes
-  if [[ "$HERMES_COUNT" -gt 0 ]]; then
-    install_hermes
-  fi
-  
-  # OpenClaw
-  if [[ "$OPENCLAW_COUNT" -gt 0 ]]; then
-    install_openclaw
-  fi
-  
-  # Claude Code
-  install_claude_code
-  
-  # OpenCode
-  install_opencode
-}
-
-# 主函数
-main() {
-  print_banner
-  
-  log_info "开始安装 Multi-Claw Memory Plugins v5.0..."
+# 查看状态
+show_status() {
+  echo ""
+  echo -e "${BLUE}=== 记忆仓库状态 ===${NC}"
   echo ""
   
-  validate_params
-  test_connection
-  
-  # 检查组织是否存在
   if ! check_org; then
-    echo ""
-    log_error "安装失败：组织 $GITGROUP 不存在"
+    echo -e "${RED}❌ 组织不存在: $GITGROUP${NC}"
+    return 1
+  fi
+  
+  echo -e "${GREEN}✅ 组织: $GITGROUP${NC}"
+  echo ""
+  
+  # 公共仓库
+  echo "公共仓库:"
+  for repo in main-memory-shared business-memory-shared code-memory-shared; do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Authorization: token $GITSERVER_TOKEN" \
+      "$GITSERVER_URL/api/v1/repos/$GITGROUP/$repo" 2>/dev/null || echo "000")
+    if [[ "$HTTP_CODE" == "200" ]]; then
+      echo -e "  ✅ $repo"
+    else
+      echo -e "  ❌ $repo"
+    fi
+  done
+  
+  echo ""
+  echo "私有仓库:"
+  
+  # Hermes
+  COUNT=0
+  while HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: token $GITSERVER_TOKEN" \
+    "$GITSERVER_URL/api/v1/repos/$GITGROUP/hermes-$((COUNT+1))-memory-private" 2>/dev/null); do
+    if [[ "$HTTP_CODE" == "200" ]]; then
+      ((COUNT++))
+    else
+      break
+    fi
+  done
+  echo -e "  Hermes: ${COUNT} 个"
+  
+  # OpenClaw
+  COUNT=0
+  while HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: token $GITSERVER_TOKEN" \
+    "$GITSERVER_URL/api/v1/repos/$GITGROUP/openclaw-$((COUNT+1))-memory-private" 2>/dev/null); do
+    if [[ "$HTTP_CODE" == "200" ]]; then
+      ((COUNT++))
+    else
+      break
+    fi
+  done
+  echo -e "  OpenClaw: ${COUNT} 个"
+  
+  # OpenCode
+  COUNT=0
+  while HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: token $GITSERVER_TOKEN" \
+    "$GITSERVER_URL/api/v1/repos/$GITGROUP/opencode-$((COUNT+1))-memory-private" 2>/dev/null); do
+    if [[ "$HTTP_CODE" == "200" ]]; then
+      ((COUNT++))
+    else
+      break
+    fi
+  done
+  echo -e "  OpenCode: ${COUNT} 个"
+  
+  # Claude Code
+  COUNT=0
+  while HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: token $GITSERVER_TOKEN" \
+    "$GITSERVER_URL/api/v1/repos/$GITGROUP/claude-code-$((COUNT+1))-memory-private" 2>/dev/null); do
+    if [[ "$HTTP_CODE" == "200" ]]; then
+      ((COUNT++))
+    else
+      break
+    fi
+  done
+  echo -e "  Claude Code: ${COUNT} 个"
+  
+  echo ""
+}
+
+# 添加私有仓库
+add_private_repo() {
+  log_step "添加私有仓库..."
+  
+  if [[ -z "$ADD_AGENT_TYPE" ]] || [[ -z "$ADD_AGENT_COUNT" ]]; then
+    log_error "缺少参数: --add-agent 需要 类型:数量 格式"
+    exit 1
+  fi
+  
+  # 检查组织
+  if ! check_org; then
+    log_error "组织不存在: $GITGROUP"
+    exit 1
+  fi
+  
+  # 获取当前数量
+  local CURRENT_COUNT=0
+  while HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+    -H "Authorization: token $GITSERVER_TOKEN" \
+    "$GITSERVER_URL/api/v1/repos/$GITGROUP/${ADD_AGENT_TYPE}-$((CURRENT_COUNT+1))-memory-private" 2>/dev/null); do
+    if [[ "$HTTP_CODE" == "200" ]]; then
+      ((CURRENT_COUNT++))
+    else
+      break
+    fi
+  done
+  
+  local TARGET_COUNT="$ADD_AGENT_COUNT"
+  local TYPE_DISPLAY=$(echo "$ADD_AGENT_TYPE" | sed 's/-/ /g' | sed 's/\b\w/\U&/g')
+  
+  log_info "当前: $CURRENT_COUNT 个 $TYPE_DISPLAY"
+  log_info "目标: $TARGET_COUNT 个 $TYPE_DISPLAY"
+  
+  if [[ "$TARGET_COUNT" -le "$CURRENT_COUNT" ]]; then
+    log_warn "目标数量不大于当前数量，无需添加"
+    return 0
+  fi
+  
+  echo ""
+  log_step "创建新的私有仓库..."
+  
+  for i in $(seq $((CURRENT_COUNT+1)) "$TARGET_COUNT"); do
+    create_repo "${ADD_AGENT_TYPE}-${i}-memory-private" "$TYPE_DISPLAY #${i} 私有记忆仓"
+  done
+  
+  log_success "✅ 添加完成: $CURRENT_COUNT → $TARGET_COUNT 个 $TYPE_DISPLAY"
+}
+
+# 主安装流程
+do_install() {
+  print_banner
+  
+  log_info "开始安装 Multi-Claw Memory Plugins v6.0..."
+  echo ""
+  
+  # 验证必要参数
+  if [[ -z "$PLUGINS_URL" ]] || [[ -z "$GITSERVER_URL" ]] || [[ -z "$GITSERVER_TOKEN" ]] || [[ -z "$GITGROUP" ]]; then
+    log_error "缺少必要参数"
+    echo "用法:"
+    echo "  bash install.sh --plugins-url <URL> --gitserver-url <URL> --gitserver-token <TOKEN> --gitgroup-name <GROUP>"
+    exit 1
+  fi
+  
+  log_info "参数:"
+  log_info "  插件仓库: $PLUGINS_URL"
+  log_info "  Git 服务器: $GITSERVER_URL"
+  log_info "  Git 组名: $GITGROUP"
+  log_info "  智能体数量: Hermes=$HERMES_COUNT, OpenClaw=$OPENCLAW_COUNT, OpenCode=$OPENCODE_COUNT, Claude Code=$CLAUDE_CODE_COUNT"
+  echo ""
+  
+  if ! test_connection; then
+    exit 1
+  fi
+  
+  if ! check_org; then
+    log_error "组织不存在: $GITGROUP"
     echo ""
     echo "请先手动创建组织："
     echo "  1. 访问 $GITSERVER_URL"
     echo "  2. 点击 + → 新建组织"
     echo "  3. 组织名称: $GITGROUP"
     echo "  4. 可见性: 私有"
-    echo "  5. 创建后再运行此安装脚本"
     exit 1
   fi
   
   create_public_repos
-  create_private_repos
+  create_all_private_repos
   clone_main_repo
-  install_all_agents
+  
+  # 安装记忆宫殿
+  echo ""
+  log_step "安装记忆宫殿..."
+  install_openclaw
+  install_hermes
+  install_claude_code
+  install_opencode
   
   echo ""
   log_success "✅ 安装完成!"
   echo ""
   
-  # 打印验证信息
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo "  验证命令："
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
   echo ""
-  echo "  1. 查看记忆宫殿安装:"
-  echo "     ls ~/.openclaw/memory-palace/"
-  echo "     cat ~/.openclaw/memory-palace/MEMORY_PALACE.md"
+  echo "  查看状态:"
+  echo "  bash $0 --status --gitgroup-name $GITGROUP --gitserver-token <TOKEN>"
   echo ""
-  echo "  2. 查看仓库列表:"
-  echo "     https://git.osc.life/$GITGROUP"
-  echo ""
-  echo "  3. 公共仓库:"
-  echo "     $GITSERVER_URL/$GITGROUP/main-memory-shared"
-  echo "     $GITSERVER_URL/$GITGROUP/business-memory-shared"
-  echo "     $GITSERVER_URL/$GITGROUP/code-memory-shared"
-  echo ""
-  echo "  4. 私有仓库数量:"
-  echo "     Hermes: $HERMES_COUNT"
-  echo "     OpenClaw: $OPENCLAW_COUNT"
-  echo "     OpenCode: $OPENCODE_COUNT"
-  echo "     Claude Code: $CLAUDE_CODE_COUNT"
+  echo "  增加私有仓库:"
+  echo "  bash $0 --add-agent openclaw:3 --gitgroup-name $GITGROUP --gitserver-token <TOKEN>"
   echo ""
   echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-  echo ""
 }
 
-# 运行
+# 主函数
+main() {
+  case "$MODE" in
+    install)
+      do_install
+      ;;
+    add-agent)
+      add_private_repo
+      ;;
+    status)
+      show_status
+      ;;
+    *)
+      echo "未知模式: $MODE"
+      exit 1
+      ;;
+  esac
+}
+
 main

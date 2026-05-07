@@ -1,6 +1,6 @@
 # 安装指南
 
-> **版本**: v3.0 | **日期**: 2026-05-08  
+> **版本**: v4.0 | **日期**: 2026-05-08  
 > **适用**: OpenClaw, Hermes, Claude Code, OpenCode
 
 ---
@@ -15,15 +15,14 @@
 
 ## 快速安装
 
-### 一步安装
+### 初始安装（默认每种1个）
 
 ```bash
 bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
   --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
   --gitserver-url https://git.osc.life \
   --gitserver-token YOUR_TOKEN \
-  --gitgroup-name claws-memory \
-  --agents hermes:1,openclaw:3,opencode:2,claude-code:0
+  --gitgroup-name claws-memory
 ```
 
 ### 参数说明
@@ -34,26 +33,79 @@ bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugin
 | `--gitserver-url` | ✅ | Git 服务器地址 |
 | `--gitserver-token` | ✅ | 访问令牌 |
 | `--gitgroup-name` | ✅ | Git 组/组织名称 |
-| `--agents` | ❌ | 各类型私有仓库数量 (默认: hermes:1,openclaw:1,opencode:1,claude-code:1) |
 | `--local-path` | ❌ | 本地安装路径 |
 
-### agents 参数格式
+---
+
+## 动态增加私有仓库
+
+安装后，可根据需要动态增加私有仓库数量：
+
+### 增加 OpenClaw 私有仓库到 3 个
+
+```bash
+bash install.sh \
+  --add-agent openclaw:3 \
+  --gitgroup-name claws-memory \
+  --gitserver-token YOUR_TOKEN
+```
+
+### 增加 OpenCode 私有仓库到 2 个
+
+```bash
+bash install.sh \
+  --add-agent opencode:2 \
+  --gitgroup-name claws-memory \
+  --gitserver-token YOUR_TOKEN
+```
+
+### 查看当前状态
+
+```bash
+bash install.sh \
+  --status \
+  --gitgroup-name claws-memory \
+  --gitserver-token YOUR_TOKEN
+```
+
+---
+
+## 仓库命名规则
 
 ```
-hermes:N,openclaw:M,opencode:K,claude-code:L
+{type}-{index}-memory-private
 ```
 
-| 类型 | 说明 |
+| 示例 | 说明 |
 |------|------|
-| `hermes:N` | Hermes 私有仓库数量 |
-| `openclaw:N` | OpenClaw 私有仓库数量 |
-| `opencode:N` | OpenCode 私有仓库数量 |
-| `claude-code:N` | Claude Code 私有仓库数量 |
+| `hermes-1-memory-private` | Hermes 第 1 个私有仓 |
+| `openclaw-1-memory-private` | OpenClaw 第 1 个私有仓 |
+| `openclaw-2-memory-private` | OpenClaw 第 2 个私有仓 |
+| `openclaw-3-memory-private` | OpenClaw 第 3 个私有仓 |
+| `opencode-1-memory-private` | OpenCode 第 1 个私有仓 |
+| `opencode-2-memory-private` | OpenCode 第 2 个私有仓 |
 
-**示例：**
-- `hermes:1,openclaw:3,opencode:2,claude-code:0` - OpenClaw 3个，OpenCode 2个，其他各1个
-- `hermes:1,openclaw:1,opencode:1,claude-code:1` - 每种1个
-- `openclaw:1` - 仅 OpenClaw 1个
+---
+
+## 完整示例
+
+```bash
+# 1. 初始安装（每种1个）
+bash <(curl -sL https://.../install.sh) \
+  --plugins-url https://... \
+  --gitserver-url https://... \
+  --gitserver-token TOKEN \
+  --gitgroup-name claws-memory
+
+# 2. 查看状态
+bash install.sh --status --gitgroup-name claws-memory --gitserver-token TOKEN
+
+# 3. 增加 OpenClaw 到 3 个
+bash install.sh --add-agent openclaw:3 --gitgroup-name claws-memory --gitserver-token TOKEN
+
+# 4. 增加 OpenCode 到 2 个
+bash install.sh --add-agent opencode:2 --gitgroup-name claws-memory --gitserver-token TOKEN
+```
 
 ---
 
