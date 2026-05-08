@@ -65,7 +65,7 @@ export class IndexEngine extends EventEmitter {
         if (!doc)
             return;
         // 从文件路径获取相对路径作为索引键
-        const relativePath = path.relative(filePath, filePath).replace(/^(\.\/|\\)/, '');
+        const relativePath = path.basename(filePath);
         repoIndex.set(relativePath, {
             path: filePath,
             repoType,

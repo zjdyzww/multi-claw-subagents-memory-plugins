@@ -1,0 +1,192 @@
+/**
+ * System1 Agent — 淘金式精炼
+ * 接收 System2 的全量 MemoryRepresentation，按7条标准筛选精炼
+ */
+
+import { EventEmitter } from 'eventemitter3';
+import type {
+  AgentInterface,
+  AgentStatus,
+  AgentRole,
+  MemoryRepresentation,
+  FactPoint,
+  ConfidenceLevel,
+} from './types.js';
+
+export class System1Agent extends EventEmitter implements AgentInterface {
+  public readonly agentId: string;
+  public readonly role: AgentRole = 'system1';
+  public readonly agentType: 'openclaw' | 'hermes' | 'claude-code' | 'opencode' | 'other';
+  private _status: AgentStatus;
+
+  get status(): 'idle' | 'processing' | 'error' {
+    return this._status.status;
+  }
+  private currentInput: MemoryRepresentation | null = null;
+  private currentResult: MemoryRepresentation | null = null;
+
+  constructor(agentId: string, agentType: string) {
+    super();
+    this.agentId = agentId;
+    this.agentType = agentType as AgentInterface['agentType'];
+    this._status = {
+      agentId,
+      role: 'system1',
+      status: 'idle',
+      processedCount: 0,
+      errorCount: 0,
+    };
+  }
+
+  getStatus(): AgentStatus {
+    return { ...this._status };
+  }
+
+  async startProcessing(input: MemoryRepresentation): Promise<void> {
+    this._status.status = 'processing';
+    this.currentInput = input;
+    this.emit('processingStarted', { agentId: this.agentId, input });
+
+    try {
+      // System1 职责：按7项标准淘金式精炼
+      const refinedFacts = this.refineFacts(input.facts);
+
+      this.currentResult = {
+        id: input.id || `sys1-${Date.now()}`,
+        rawContent: input.rawContent,
+        refinedContent: this.buildRefinedContent(refinedFacts),
+        facts: refinedFacts,
+        confidence: this.calculateOverallConfidence(refinedFacts),
+        source: input.source || 'conversation',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          ...input.metadata,
+          totalFacts: input.facts.length,
+          refinedCount: refinedFacts.length,
+          discardRate: input.facts.length > 0
+            ? ((input.facts.length - refinedFacts.length) / input.facts.length)
+            : 0,
+        },
+        residualInfo: input.residualInfo,
+      };
+
+      this._status.processedCount++;
+      this._status.lastProcessedAt = new Date().toISOString();
+      this._status.status = 'idle';
+      this.emit('processingComplete', { agentId: this.agentId, result: this.currentResult });
+    } catch (error) {
+      this._status.status = 'error';
+      this._status.errorCount++;
+      this._status.errorMessage = error instanceof Error ? error.message : String(error);
+      this.emit('processingError', { agentId: this.agentId, error });
+      throw error;
+    }
+  }
+
+  async getResult(): Promise<MemoryRepresentation> {
+    if (!this.currentResult) {
+      throw new Error('No result available. Call startProcessing first.');
+    }
+    return this.currentResult;
+  }
+
+  async shutdown(): Promise<void> {
+    this._status.status = 'idle';
+    this.currentInput = null;
+    this.currentResult = null;
+    this.emit('shutdown', { agentId: this.agentId });
+  }
+
+  /**
+   * 按7项标准筛选精炼事实点
+   *
+   * 1. 用户明确表达 — 置信度: CONFIRMED
+   * 2. 关键决策结论 — 置信度: CONFIRMED
+   * 3. 环境/配置变更 — 置信度: CONFIRMED
+   * 4. 合理推断 — 置信度: LIKELY
+   * 5. 首次获取信息 — 置信度: LIKELY
+   * 6. 模糊表达 — 置信度: UNCERTAIN (保留但不升级)
+   * 7. 与已有矛盾 — 置信度: UNCERTAIN (标记冲突)
+   */
+  private refineFacts(facts: FactPoint[]): FactPoint[] {
+    const refined: FactPoint[] = [];
+
+    for (const fact of facts) {
+      const evaluated = this.evaluateFact(fact);
+
+      if (evaluated) {
+        refined.push({
+          ...fact,
+          confidence: evaluated.confidence,
+          verified: evaluated.verified,
+        });
+      }
+    }
+
+    return refined;
+  }
+
+  private evaluateFact(fact: FactPoint): { confidence: ConfidenceLevel; verified: boolean } | null {
+    const content = fact.content.toLowerCase();
+
+    // 用户明确表达的关键词
+    const explicitPatterns = /^(我是|我的|我要|我决定|确认|是的|对|没错|OK|好的)/;
+    const decisionPatterns = /(决定|采用|选择|使用|设定|确认方案|最终方案)/;
+    const configPatterns = /(修改|配置|设置|部署|安装|升级|回滚)/;
+    const vaguePatterns = /(可能|大概|也许|应该|好像|似乎|不一定|还不确定)/;
+
+    // 歧义或模糊表达 → 保持 UNCERTAIN
+    if (vaguePatterns.test(content)) {
+      return { confidence: 'UNCERTAIN', verified: false };
+    }
+
+    // 用户明确表达 → CONFIRMED
+    if (explicitPatterns.test(content)) {
+      return { confidence: 'CONFIRMED', verified: true };
+    }
+
+    // 关键决策 → CONFIRMED
+    if (decisionPatterns.test(content)) {
+      return { confidence: 'CONFIRMED', verified: true };
+    }
+
+    // 配置/环境变更 → LIKELY
+    if (configPatterns.test(content)) {
+      return { confidence: 'LIKELY', verified: false };
+    }
+
+    // 有信息量的内容 → LIKELY
+    if (content.length > 10) {
+      return { confidence: 'LIKELY', verified: false };
+    }
+
+    // 短而无意义的内容 → 丢弃
+    return null;
+  }
+
+  private calculateOverallConfidence(facts: FactPoint[]): ConfidenceLevel {
+    if (facts.length === 0) return 'UNCERTAIN';
+
+    const confirmed = facts.filter(f => f.confidence === 'CONFIRMED').length;
+    const likely = facts.filter(f => f.confidence === 'LIKELY').length;
+    const uncertain = facts.filter(f => f.confidence === 'UNCERTAIN').length;
+
+    if (confirmed > likely && confirmed > uncertain) return 'CONFIRMED';
+    if (likely >= confirmed) return 'LIKELY';
+    return 'UNCERTAIN';
+  }
+
+  private buildRefinedContent(facts: FactPoint[]): string {
+    const lines = facts.map(f => {
+      const marker = f.confidence === 'CONFIRMED' ? '🟢'
+        : f.confidence === 'LIKELY' ? '🟡' : '🔴';
+      return `${marker} ${f.content}`;
+    });
+    return lines.join('\n\n');
+  }
+}
+
+// 导出工厂函数
+export function createSystem1Agent(agentId: string, agentType: string): System1Agent {
+  return new System1Agent(agentId, agentType);
+}

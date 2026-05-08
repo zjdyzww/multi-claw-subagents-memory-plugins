@@ -11,11 +11,24 @@ import { GitSyncManager, gitSyncManager } from './git-sync.js';
 import { IndexEngine, indexEngine } from './indexer.js';
 import { AccessControl, accessControl } from './access-control.js';
 import { EventBus, eventBus } from './event-bus.js';
+import type { AgentInfo } from './types.js';
+
+// v9 新增：三代理引擎
+import { System2Agent, createSystem2Agent } from './system2-agent.js';
+import { System1Agent, createSystem1Agent } from './system1-agent.js';
+import { FullMemoryAgentClient, createFullMemoryAgentClient } from './full-memory-agent-client.js';
+import { FullMemoryAgentServer, createFullMemoryAgentServer } from './full-memory-agent-server.js';
+import { AgentCommunicationManager, createAgentCommunicationManager } from './agent-communication.js';
 
 export { GitSyncManager, gitSyncManager };
 export { IndexEngine, indexEngine };
 export { AccessControl, accessControl };
 export { EventBus, eventBus };
+export { System2Agent, createSystem2Agent };
+export { System1Agent, createSystem1Agent };
+export { FullMemoryAgentClient, createFullMemoryAgentClient };
+export { FullMemoryAgentServer, createFullMemoryAgentServer };
+export { AgentCommunicationManager, createAgentCommunicationManager };
 
 /**
  * 初始化所有核心模块
@@ -63,7 +76,7 @@ export async function initializeCore(config: {
   // 注册智能体
   accessControl.registerAgent({
     agentId: config.agentId,
-    agentType: config.agentType as any,
+    agentType: config.agentType as AgentInfo['agentType'],
     displayName: config.agentId,
     priority: 100,
     capabilities: ['memory:read', 'memory:write', 'memory:sync'],
@@ -81,7 +94,7 @@ export async function initializeCore(config: {
   // 发布上线事件
   eventBus.publishAgentOnline({
     agentId: config.agentId,
-    agentType: config.agentType as any,
+    agentType: config.agentType as AgentInfo['agentType'],
     displayName: config.agentId,
     priority: 100,
     capabilities: ['memory:read', 'memory:write', 'memory:sync'],

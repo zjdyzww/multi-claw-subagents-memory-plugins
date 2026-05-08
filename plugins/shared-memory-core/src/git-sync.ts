@@ -121,9 +121,10 @@ export class GitSyncManager extends EventEmitter {
       // Pull 并处理冲突
       if (status.tracking) {
         try {
-          const pullResult = await git.pull('origin', config.defaultBranch, {
+          const pullOptions: Record<string, string> = {
             '--rebase': options.force ? 'false' : 'true'
-          } as any);
+          };
+          const pullResult = await git.pull('origin', config.defaultBranch, pullOptions);
           result.pulled = pullResult.files.length;
         } catch (pullError: unknown) {
           const errorMsg = pullError instanceof Error ? pullError.message : String(pullError);
@@ -232,7 +233,7 @@ export class GitSyncManager extends EventEmitter {
 
     const config = this.repos.get(repoType);
     const logs = await git.log({ maxCount: limit });
-    return logs.all as any[];
+    return logs.all as unknown as (DefaultLogFields & { diff?: unknown })[];
   }
 
   /**
@@ -246,9 +247,9 @@ export class GitSyncManager extends EventEmitter {
 
     for (const conflict of conflicts) {
       if (conflict.resolution === 'local') {
-        await git.checkout(['--ours', conflict.file] as any);
+        await git.raw(['checkout', '--ours', conflict.file]);
       } else if (conflict.resolution === 'remote') {
-        await git.checkout(['--theirs', conflict.file] as any);
+        await git.raw(['checkout', '--theirs', conflict.file]);
       }
       // 对于 merged，用户需要手动编辑
       await git.add(conflict.file);
