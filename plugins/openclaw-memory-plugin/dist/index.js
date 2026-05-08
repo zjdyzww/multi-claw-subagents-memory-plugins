@@ -3,6 +3,7 @@
  * OpenClaw 智能体记忆管理插件
  */
 import { gitSyncManager, indexEngine, eventBus } from '@multi-claw/shared-memory-core';
+import { homedir } from 'os';
 // 工具函数：保存记忆
 export async function saveMemory(params) {
     try {
@@ -143,7 +144,7 @@ export async function getMemoryStatus() {
 // 辅助函数
 function getRepoPath(repo) {
     const basePath = process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
-    const expandedPath = basePath.replace(/^~/, require('os').homedir());
+    const expandedPath = basePath.replace(/^~/, homedir());
     const paths = {
         main: `${expandedPath}/main-memory-shared`,
         business: `${expandedPath}/business-memory-shared`,

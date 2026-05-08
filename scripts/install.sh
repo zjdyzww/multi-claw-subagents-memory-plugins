@@ -210,12 +210,11 @@ create_all_private_repos() {
   create_private_repos_for_type "claude-code" "$CLAUDE_CODE_COUNT" "Claude Code"
 }
 
-# 克隆主仓库
+# 克隆主仓库 (also clones to plugin-repos for OpenClaw plugin loading)
 clone_main_repo() {
   log_step "克隆主仓库..."
   
   PARENT_DIR=$(dirname "$LOCAL_PATH")
-  REPO_NAME=$(basename "$PLUGINS_URL")
   
   mkdir -p "$PARENT_DIR"
   cd "$PARENT_DIR"
@@ -230,7 +229,154 @@ clone_main_repo() {
     git clone --recursive "$PLUGINS_URL" "$LOCAL_PATH"
   fi
   
+  # Also clone to OpenClaw plugin-repos for plugin loading
+  PLUGIN_REPOS_PATH="$OPENCLAW_PATH/plugin-repos/multi-claw-subagents-memory-plugins"
+  if [[ ! -d "$PLUGIN_REPOS_PATH/.git" ]]; then
+    mkdir -p "$(dirname "$PLUGIN_REPOS_PATH")"
+    log_info "  📥 同步到 OpenClaw plugin-repos..."
+    git clone --recursive "$PLUGINS_URL" "$PLUGIN_REPOS_PATH" 2>/dev/null || \
+      cp -r "$LOCAL_PATH" "$PLUGIN_REPOS_PATH"
+  fi
+  
   log_success "  ✅ 主仓库就绪"
+}
+
+# 构建插件 (compile TypeScript, copy manifests to dist)
+build_plugins() {
+  log_step "构建插件..."
+  
+  local PLUGIN_SRC="$LOCAL_PATH/plugins"
+  # If plugin-repos copy exists and is newer, use it; otherwise use LOCAL_PATH
+  local PLUGIN_REPOS_SRC="$OPENCLAW_PATH/plugin-repos/multi-claw-subagents-memory-plugins/plugins"
+  
+  # Detect node/npm
+  if command -v node &>/dev/null; then
+    NODE_CMD="node"
+  elif [[ -x "$HOME/linuxbrew/.linuxbrew/bin/node" ]]; then
+    NODE_CMD="$HOME/linuxbrew/.linuxbrew/bin/node"
+  elif [[ -x "/home/linuxbrew/.linuxbrew/bin/node" ]]; then
+    NODE_CMD="/home/linuxbrew/.linuxbrew/bin/node"
+  else
+    # Try to source nvm
+    export NVM_DIR="${NVM_DIR:-$HOME/.config/nvm}"
+    if [[ -s "$NVM_DIR/nvm.sh" ]]; then
+      . "$NVM_DIR/nvm.sh" 2>/dev/null
+    fi
+    NODE_CMD="node"
+  fi
+  
+  build_one_plugin() {
+    local PLUGIN_DIR="$1"
+    local PLUGIN_NAME="$2"
+    
+    if [[ ! -d "$PLUGIN_DIR" ]]; then
+      log_warn "  ⚠️  $PLUGIN_NAME 目录不存在，跳过"
+      return 0
+    fi
+    
+    log_info "  🔨 构建 $PLUGIN_NAME..."
+    cd "$PLUGIN_DIR"
+    
+    # Install dependencies (shared-memory-core first, then openclaw-memory-plugin)
+    if [[ ! -d "node_modules" ]] || [[ "$FORCE_BUILD" == "true" ]]; then
+      log_info "    📦 npm install..."
+      npm install --legacy-peer-deps 2>&1 | tail -3 || {
+        log_warn "    ⚠️  npm install 有警告，继续..."
+      }
+    else
+      log_info "    📦 node_modules 已存在，跳过"
+    fi
+    
+    # Build
+    log_info "    🔧 编译 TypeScript..."
+    npm run build 2>&1 || {
+      # Fallback: try tsc directly
+      log_warn "    ⚠️  npm run build 失败，尝试直接 tsc..."
+      npx tsc 2>&1 || log_warn "    ⚠️  tsc 可能未安装全局，跳过编译"
+    }
+    
+    # Ensure openclaw.plugin.json is in dist (manual copy as fallback)
+    if [[ -f "openclaw.plugin.json" ]] && [[ ! -f "dist/openclaw.plugin.json" ]]; then
+      cp openclaw.plugin.json dist/ 2>/dev/null || true
+      log_info "    📋 复制 manifest 到 dist/"
+    fi
+    
+    # Ensure skills are in dist
+    if [[ -d "skills" ]] && [[ ! -d "dist/skills" ]]; then
+      cp -r skills dist/ 2>/dev/null || true
+      log_info "    📋 复制 skills 到 dist/"
+    fi
+    
+    log_success "  ✅ $PLUGIN_NAME 构建完成"
+  }
+  
+  # Build shared-memory-core FIRST (it's a dependency of openclaw-memory-plugin)
+  if [[ -d "$PLUGIN_SRC/shared-memory-core" ]]; then
+    build_one_plugin "$PLUGIN_SRC/shared-memory-core" "shared-memory-core"
+  elif [[ -d "$PLUGIN_REPOS_SRC/shared-memory-core" ]]; then
+    build_one_plugin "$PLUGIN_REPOS_SRC/shared-memory-core" "shared-memory-core"
+  fi
+  
+  # Then build openclaw-memory-plugin
+  if [[ -d "$PLUGIN_SRC/openclaw-memory-plugin" ]]; then
+    build_one_plugin "$PLUGIN_SRC/openclaw-memory-plugin" "openclaw-memory-plugin"
+  elif [[ -d "$PLUGIN_REPOS_SRC/openclaw-memory-plugin" ]]; then
+    build_one_plugin "$PLUGIN_REPOS_SRC/openclaw-memory-plugin" "openclaw-memory-plugin"
+  fi
+  
+  log_success "  ✅ 所有插件构建完成"
+}
+
+# 配置 OpenClaw 插件加载路径
+configure_openclaw_plugins() {
+  log_step "配置 OpenClaw 插件..."
+  
+  local PLUGIN_BASE="$OPENCLAW_PATH/plugin-repos/multi-claw-subagents-memory-plugins/plugins"
+  local OCLAW_CONFIG="$OPENCLAW_PATH/openclaw.json"
+  
+  if [[ ! -f "$OCLAW_CONFIG" ]]; then
+    log_warn "  ⚠️  openclaw.json 不存在，跳过插件配置"
+    return 0
+  fi
+  
+  # 检查是否已配置
+  if grep -q "openclaw-memory-plugin" "$OCLAW_CONFIG" 2>/dev/null; then
+    log_info "  ⏭️  插件配置已存在"
+  else
+    log_info "  请在 openclaw.json 中手动添加以下配置:"
+    echo ""
+    echo '  "plugins": {'
+    echo '    "entries": {'
+    echo '      "openclaw-memory-plugin": {'
+    echo '        "enabled": true,'
+    echo '        "config": {'
+    echo '          "gitServer": {'
+    echo '            "url": "'"$GITSERVER_URL"'",'
+    echo '            "token": "<YOUR_TOKEN>"'
+    echo '          },'
+    echo '          "sync": {'
+    echo '            "groupName": "'"$GITGROUP"'",'
+    echo '            "autoSync": false,'
+    echo '            "syncIntervalMs": 300000'
+    echo '          }'
+    echo '        }'
+    echo '      },'
+    echo '      "shared-memory-core": {'
+    echo '        "enabled": true,'
+    echo '        "config": {}'
+    echo '      }'
+    echo '    },'
+    echo '    "load": {'
+    echo '      "paths": ['
+    echo '        "'"$PLUGIN_BASE"'/openclaw-memory-plugin/dist",'
+    echo '        "'"$PLUGIN_BASE"'/shared-memory-core/dist"'
+    echo '      ]'
+    echo '    }'
+    echo '  }'
+    echo ""
+  fi
+  
+  log_success "  ✅ OpenClaw 插件配置就绪"
 }
 
 # 安装 OpenClaw 记忆宫殿
@@ -554,6 +700,8 @@ do_install() {
   create_public_repos
   create_all_private_repos
   clone_main_repo
+  build_plugins
+  configure_openclaw_plugins
   
   # 安装记忆宫殿
   echo ""

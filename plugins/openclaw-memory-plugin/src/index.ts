@@ -5,6 +5,7 @@
 
 import { gitSyncManager, indexEngine, accessControl, eventBus } from '@multi-claw/shared-memory-core';
 import type { RepoType, MemoryDocument, SearchQuery, SyncResult } from '@multi-claw/shared-memory-core';
+import { homedir } from 'os';
 
 // 插件配置
 interface OpenClawMemoryConfig {
@@ -200,7 +201,7 @@ export async function getMemoryStatus(): Promise<{
 // 辅助函数
 function getRepoPath(repo: RepoType): string {
   const basePath = process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
-  const expandedPath = basePath.replace(/^~/, require('os').homedir());
+  const expandedPath = basePath.replace(/^~/, homedir());
   
   const paths: Record<RepoType, string> = {
     main: `${expandedPath}/main-memory-shared`,
@@ -245,11 +246,11 @@ export function registerOpenClawMemoryPlugin(api: {
   registerSkill: (skill: { name: string; description: string }) => void;
 }): void {
   // 注册工具
-  api.registerTool('memory_save', saveMemory);
-  api.registerTool('memory_load', loadMemory);
-  api.registerTool('memory_search', searchMemory);
-  api.registerTool('memory_sync', syncMemory);
-  api.registerTool('memory_status', getMemoryStatus);
+  api.registerTool('memory_save', saveMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_load', loadMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_search', searchMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_sync', syncMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_status', getMemoryStatus as (...args: unknown[]) => unknown);
   
   // 注册技能
   api.registerSkill({

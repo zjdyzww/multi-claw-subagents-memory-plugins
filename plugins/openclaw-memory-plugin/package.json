@@ -12,12 +12,16 @@
     ]
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy:manifest && npm run copy:skills",
+    "build:ts": "tsc",
+    "copy:manifest": "cp openclaw.plugin.json dist/",
+    "copy:skills": "rm -rf dist/skills && cp -r skills dist/skills",
     "dev": "tsc --watch",
     "prepublish": "npm run build"
   },
   "dependencies": {
-    "@multi-claw/shared-memory-core": "^1.0.0"
+    "@multi-claw/shared-memory-core": "file:../shared-memory-core",
+    "gray-matter": "^4.0.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

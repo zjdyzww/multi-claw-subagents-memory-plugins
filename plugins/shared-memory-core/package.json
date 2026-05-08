@@ -13,7 +13,9 @@
     "./event-bus": "./dist/event-bus.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && npm run copy:manifest",
+    "build:ts": "tsc",
+    "copy:manifest": "cp openclaw.plugin.json dist/",
     "dev": "tsc --watch",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },

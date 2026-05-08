@@ -81,17 +81,30 @@ multi-claw-subagents-memory-plugins/
 
 ## 🚀 快速安装
 
-### 方法一：复制提示词（推荐）
+### 方法一：通过 OpenClaw 提示词安装（推荐，零配置）
+
+在 OpenClaw 对话中发送：
 
 ```
-add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins gitserver-url=https://git.osc.life gitserver-token=<YOUR_TOKEN> gitgroup-name=claws-memory
+add multi-claw-subagents-memory-plugins where
+  plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins
+  gitserver-url=https://git.osc.life
+  gitserver-token=<YOUR_GITEA_TOKEN>
+  gitgroup-name=claws-memory
 ```
+
+OpenClaw 将自动执行以下步骤：
+1. 创建 Gitea 记忆仓库（公共 + 私有）
+2. 克隆插件仓库到 `~/.openclaw/memory-plugins` 和 `~/.openclaw/plugin-repos/`
+3. 安装 npm 依赖并编译 TypeScript 插件
+4. 配置 `openclaw.json` 中插件加载路径
+5. 安装记忆宫殿到所有网关（OpenClaw / Hermes / Claude Code / OpenCode）
 
 **参数说明：**
 - `plugins-url`: 插件仓库地址
-- `gitserver-url`: Git 服务器地址
-- `gitserver-token`: 访问令牌
-- `gitgroup-name`: Git 组/组织名称
+- `gitserver-url`: Git 服务器地址（Gitea）
+- `gitserver-token`: Gitea 访问令牌
+- `gitgroup-name`: Gitea 组织名（用于创建记忆仓库）
 
 ### 方法二：安装脚本
 
@@ -99,8 +112,63 @@ add multi-claw-subagents-memory-plugins where plugins-url=https://git.osc.life/y
 bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
   --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
   --gitserver-url https://git.osc.life \
-  --gitserver-token <YOUR_TOKEN> \
+  --gitserver-token <YOUR_GITEA_TOKEN> \
   --gitgroup-name claws-memory
+```
+
+### 手动安装步骤
+
+如需手动安装，按以下顺序执行：
+
+```bash
+# 1. 克隆仓库
+git clone https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins.git ~/.openclaw/memory-plugins
+
+# 2. 构建插件（先构建 shared-memory-core，再构建 openclaw-memory-plugin）
+cd ~/.openclaw/memory-plugins/plugins/shared-memory-core
+npm install && npm run build
+
+cd ../openclaw-memory-plugin
+npm install && npm run build
+
+# 3. 在 openclaw.json 中添加插件配置（见下方"插件配置"章节）
+```
+
+### 插件配置
+
+在 `~/.openclaw/openclaw.json` 中添加：
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "openclaw-memory-plugin": {
+        "enabled": true,
+        "config": {
+          "gitServer": {
+            "url": "https://git.osc.life",
+            "token": "<YOUR_GITEA_TOKEN>"
+          },
+          "sync": {
+            "groupName": "claws-memory",
+            "autoSync": false,
+            "syncIntervalMs": 300000
+          }
+        }
+      },
+      "shared-memory-core": {
+        "enabled": true,
+        "config": {}
+      }
+    },
+    "load": {
+      "paths": [
+        "/home/<USER>/.openclaw/plugin-repos/multi-claw-subagents-memory-plugins/plugins/openclaw-memory-plugin/dist",
+        "/home/<USER>/.openclaw/plugin-repos/multi-claw-subagents-memory-plugins/plugins/shared-memory-core/dist"
+      ]
+    }
+  }
+}
 ```
 
 ### 动态增加私有仓库

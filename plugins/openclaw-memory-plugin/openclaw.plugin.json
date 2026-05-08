@@ -1,0 +1,46 @@
+{
+  "id": "openclaw-memory-plugin",
+  "enabledByDefault": false,
+  "name": "OpenClaw Memory Plugin",
+  "description": "OpenClaw memory plugin for multi-agent memory management. Provides save, load, search, and sync capabilities for agent memories.",
+  "skills": [
+    "skills/openclaw-memory-skill"
+  ],
+  "tools": [
+    "memory_save",
+    "memory_load",
+    "memory_search",
+    "memory_sync",
+    "memory_status"
+  ],
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": true,
+    "properties": {
+      "mainRepoUrl": {
+        "type": "string",
+        "description": "URL of the main memory repository"
+      },
+      "businessRepoUrl": {
+        "type": "string",
+        "description": "URL of the business memory repository"
+      },
+      "codeRepoUrl": {
+        "type": "string",
+        "description": "URL of the code memory repository"
+      },
+      "privateRepoUrl": {
+        "type": "string",
+        "description": "URL of the private memory repository"
+      },
+      "localPath": {
+        "type": "string",
+        "description": "Local path for memory storage"
+      },
+      "syncInterval": {
+        "type": "number",
+        "description": "Sync interval in milliseconds"
+      }
+    }
+  }
+}

@@ -38,7 +38,9 @@ export declare class GitSyncManager extends EventEmitter {
     /**
      * 获取最近的提交记录
      */
-    getRecentCommits(repoType: string, limit?: number): Promise<DefaultLogFields[]>;
+    getRecentCommits(repoType: string, limit?: number): Promise<(DefaultLogFields & {
+        diff?: unknown;
+    })[]>;
     /**
      * 解决冲突
      */

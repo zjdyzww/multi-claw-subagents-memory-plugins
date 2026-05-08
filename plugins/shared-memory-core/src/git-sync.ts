@@ -122,8 +122,8 @@ export class GitSyncManager extends EventEmitter {
       if (status.tracking) {
         try {
           const pullResult = await git.pull('origin', config.defaultBranch, {
-            '--rebase': options.force ? false : true
-          });
+            '--rebase': options.force ? 'false' : 'true'
+          } as any);
           result.pulled = pullResult.files.length;
         } catch (pullError: unknown) {
           const errorMsg = pullError instanceof Error ? pullError.message : String(pullError);
@@ -224,15 +224,15 @@ export class GitSyncManager extends EventEmitter {
   /**
    * 获取最近的提交记录
    */
-  async getRecentCommits(repoType: string, limit = 10): Promise<DefaultLogFields[]> {
+  async getRecentCommits(repoType: string, limit = 10): Promise<(DefaultLogFields & { diff?: unknown })[]> {
     const git = this.gits.get(repoType);
     if (!git) {
       throw new Error(`Repository ${repoType} not found`);
     }
 
     const config = this.repos.get(repoType);
-    const logs = await git.log({ maxCount: limit, file: undefined });
-    return logs.all;
+    const logs = await git.log({ maxCount: limit });
+    return logs.all as any[];
   }
 
   /**
@@ -246,9 +246,9 @@ export class GitSyncManager extends EventEmitter {
 
     for (const conflict of conflicts) {
       if (conflict.resolution === 'local') {
-        await git.checkout(`--ours`, conflict.file);
+        await git.checkout(['--ours', conflict.file] as any);
       } else if (conflict.resolution === 'remote') {
-        await git.checkout(`--theirs`, conflict.file);
+        await git.checkout(['--theirs', conflict.file] as any);
       }
       // 对于 merged，用户需要手动编辑
       await git.add(conflict.file);

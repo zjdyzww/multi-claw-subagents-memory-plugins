@@ -103,7 +103,7 @@ export class GitSyncManager extends EventEmitter {
             if (status.tracking) {
                 try {
                     const pullResult = await git.pull('origin', config.defaultBranch, {
-                        '--rebase': options.force ? false : true
+                        '--rebase': options.force ? 'false' : 'true'
                     });
                     result.pulled = pullResult.files.length;
                 }
@@ -197,7 +197,7 @@ export class GitSyncManager extends EventEmitter {
             throw new Error(`Repository ${repoType} not found`);
         }
         const config = this.repos.get(repoType);
-        const logs = await git.log({ maxCount: limit, file: undefined });
+        const logs = await git.log({ maxCount: limit });
         return logs.all;
     }
     /**
@@ -210,10 +210,10 @@ export class GitSyncManager extends EventEmitter {
         }
         for (const conflict of conflicts) {
             if (conflict.resolution === 'local') {
-                await git.checkout(`--ours`, conflict.file);
+                await git.checkout(['--ours', conflict.file]);
             }
             else if (conflict.resolution === 'remote') {
-                await git.checkout(`--theirs`, conflict.file);
+                await git.checkout(['--theirs', conflict.file]);
             }
             // 对于 merged，用户需要手动编辑
             await git.add(conflict.file);
