@@ -1,0 +1,23 @@
+{
+  "id": "shared-memory-core",
+  "enabledByDefault": false,
+  "name": "Shared Memory Core",
+  "description": "Shared memory core library for multi-agent memory plugins. Provides git sync, indexing, access control, and event bus functionality.",
+  "libraries": [
+    "./access-control.js",
+    "./event-bus.js",
+    "./git-sync.js",
+    "./indexer.js",
+    "./index.js"
+  ],
+  "exports": {
+    "gitSyncManager": "./git-sync.js",
+    "indexEngine": "./indexer.js",
+    "accessControl": "./access-control.js",
+    "eventBus": "./event-bus.js"
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": true
+  }
+}
