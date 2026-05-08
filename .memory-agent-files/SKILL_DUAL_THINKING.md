@@ -9,10 +9,10 @@ outputs: 金字塔结构化回复（System 1 < 200字 / System 2 < 1000字）
 tags: [双系统, 快思考, 慢思考, 海绵式, 淘金式, 一致性, 残差趋零]
 ---
 
-# Dual Thinking Skill v3 — 双系统记忆协同框架（自净化版）
+# Dual Thinking Skill v4 — 三代理协同协议
 
-> 核心升级：System 2 海绵式全量吸收 → System 1 淘金式提炼 → 残差趋零清理 → Gitea 一致性同步
-> 新增：残差三层清理机制（Layer 1主动消解 / Layer 2被动消解 / Layer 3强制清理）
+> 核心升级：v4 将 System2 和 System1 升级为两个独立记忆代理，通过标准化接口通信
+> System2记忆代理 → System1记忆代理 → 全量记忆代理，三代理各司其职
 
 ---
 

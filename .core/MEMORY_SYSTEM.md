@@ -77,7 +77,7 @@ memory-system/
 ├── shared/                   # 公共记忆
 │   ├── main-memory/         # 主仓
 │   ├── business-memory/     # 业务仓
-│   └── code-memory/        # 代码仓
+│   └── code-repository-link-memory/        # 代码仓库关联仓（不做保留任何项目代码，只保留项目代码仓库的介绍和地址链接等）
 │
 └── .core/                   # 核心系统文件
 ```

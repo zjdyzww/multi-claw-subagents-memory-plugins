@@ -9,9 +9,9 @@ outputs: 更新的 MEMORY.md，Git commit，Gitea 推送结果
 tags: [记忆管理, 海绵, 淘金, 同步, 一致性, Gitea]
 ---
 
-# Memory Manager Skill v2 — 记忆管理器（协同版）
+# Memory Manager Skill v3 — 全量记忆代理执行器
 
-> 核心改进：适配 System 2 海绵式 / System 1 淘金式框架，保证三地一致性
+> 核心改进：v3.1 全量记忆代理拆分为 Server+Client 双层——Client 端管理本地文件与残差调度，Server 端管理远程 Gitea 同步与跨网关广播，双端通过标准化接口协同
 
 ---
 

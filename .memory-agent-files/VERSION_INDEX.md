@@ -39,6 +39,6 @@
 ## 学术对照
 - MemORAI ✅ | MemMachine ✅ | SPARK ✅ | 残差趋零（首创）✅
 
-## Gitea
-- hermes-memory: https://git.osc.life/myz/hermes-memory
-- memory-agent-plugins: https://git.osc.life/myz/memory-agent-plugins
+## Git
+- 智能体个性仓
+- 
