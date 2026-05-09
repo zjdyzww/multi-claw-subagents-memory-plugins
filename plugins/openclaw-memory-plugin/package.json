@@ -12,10 +12,10 @@
     ]
   },
   "scripts": {
-    "build": "tsc && npm run copy:manifest && npm run copy:skills",
+    "build": "tsc && npm run copy:manifest",
     "build:ts": "tsc",
-    "copy:manifest": "cp openclaw.plugin.json dist/",
-    "copy:skills": "rm -rf dist/skills && cp -r skills dist/skills",
+    "copy:manifest": "node -e \"require('fs').copyFileSync('openclaw.plugin.json','dist/openclaw.plugin.json')\"",
+    "copy:skills": "node -e \"const{existsSync,mkdirSync,copyFileSync}=require('fs');const{join}=require('path');const d='dist/skills';if(!existsSync(d))mkdirSync(d,{recursive:true})\"",
     "dev": "tsc --watch",
     "prepublish": "npm run build"
   },

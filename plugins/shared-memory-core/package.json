@@ -15,7 +15,7 @@
   "scripts": {
     "build": "tsc && npm run copy:manifest",
     "build:ts": "tsc",
-    "copy:manifest": "cp openclaw.plugin.json dist/",
+    "copy:manifest": "node -e \"require('fs').copyFileSync('openclaw.plugin.json','dist/openclaw.plugin.json')\"",
     "dev": "tsc --watch",
     "test": "vitest run",
     "test:watch": "vitest",

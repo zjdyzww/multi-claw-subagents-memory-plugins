@@ -114,6 +114,54 @@ export declare function getResidualStatus(): Promise<{
     };
     error?: string;
 }>;
+export declare function vectorSearch(params: {
+    query: string;
+    topK?: number;
+    repoTypes?: RepoType[];
+    filterTags?: string[];
+}): Promise<{
+    success: boolean;
+    results?: Array<{
+        id: string;
+        score: number;
+        title: string;
+        preview: string;
+    }>;
+    stats?: unknown;
+    error?: string;
+}>;
+export declare function fuseMemory(params: {
+    docIds: string[];
+}): Promise<{
+    success: boolean;
+    merged?: {
+        title: string;
+        content: string;
+        factCount: number;
+        mergedFrom: string[];
+    };
+    error?: string;
+}>;
+export declare function assessMemoryQuality(params: {
+    docId?: string;
+}): Promise<{
+    success: boolean;
+    report?: {
+        title: string;
+        score: number;
+        completeness: number;
+        freshness: number;
+        consistency: number;
+        confidenceBalance: number;
+        issues: Array<{
+            type: string;
+            severity: string;
+            description: string;
+        }>;
+        recommendations: string[];
+    };
+    error?: string;
+}>;
 export declare function registerOpenClawMemoryPlugin(api: {
     registerTool: (name: string, fn: (...args: unknown[]) => unknown) => void;
     registerSkill: (skill: {
