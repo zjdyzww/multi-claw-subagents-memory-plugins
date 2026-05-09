@@ -3,7 +3,7 @@
  *
  * 🟢 CONFIRMED / 🟡 LIKELY / 🔴 UNCERTAIN 三级标注
  * 置信度链存储与更新、冲突检测与处理协议、traceabilityId 溯源关联
- * 基于 CONFIDENCE_PROPAGATION.md 中定义的规则
+ * 基于论文第3.4节 置信度传播机制
  */
 import { EventEmitter } from 'eventemitter3';
 export class ConfidenceEngine extends EventEmitter {
@@ -148,7 +148,7 @@ export class ConfidenceEngine extends EventEmitter {
         this.emit('allCleared', {});
     }
     // ============================================================
-    // 冲突处理协议（基于 CONFIDENCE_PROPAGATION.md）
+    // 冲突处理协议（CASE 1/2/3 三态自动决策）
     // ============================================================
     /**
      * 冲突检测与自动解决

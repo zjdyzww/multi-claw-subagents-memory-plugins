@@ -16,7 +16,15 @@ export interface CommitContext {
 export declare class GitSyncManager extends EventEmitter {
     private repos;
     private gits;
+    private syncTimers;
+    private scheduledSyncTimes;
     constructor();
+    /**
+     * 启动定时同步（C4 原则: 10:00 + 22:00 + 重大变更立即）
+     */
+    startScheduledSync(customTimes?: string[]): void;
+    stopScheduledSync(): void;
+    private syncAllRepos;
     /**
      * 注册仓库
      */

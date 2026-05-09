@@ -48,7 +48,7 @@ export class System2Agent extends EventEmitter implements AgentInterface {
     this.emit('processingStarted', { agentId: this.agentId, input });
 
     try {
-      // System2 职责：全量捕获，不做过滤
+      // System2 职责：全量捕获，不做过滤（零遗漏原则）
       // 将原始对话内容转换为结构化的 MemoryRepresentation
       const facts = this.extractAllFacts(input);
 
@@ -59,7 +59,11 @@ export class System2Agent extends EventEmitter implements AgentInterface {
         confidence: 'UNCERTAIN',
         source: input.source || 'conversation',
         timestamp: new Date().toISOString(),
-        metadata: input.metadata || {},
+        metadata: {
+          ...input.metadata,
+          captureMode: 'zero-omission',
+          capturedFactCount: facts.length,
+        },
       };
 
       this._status.processedCount++;

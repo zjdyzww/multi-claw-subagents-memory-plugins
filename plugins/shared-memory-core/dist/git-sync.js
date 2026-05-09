@@ -16,8 +16,54 @@ const AGENT_AUTHORS = {
 export class GitSyncManager extends EventEmitter {
     repos = new Map();
     gits = new Map();
+    syncTimers = [];
+    scheduledSyncTimes = ['10:00', '22:00'];
     constructor() {
         super();
+    }
+    /**
+     * 启动定时同步（C4 原则: 10:00 + 22:00 + 重大变更立即）
+     */
+    startScheduledSync(customTimes) {
+        const times = customTimes || this.scheduledSyncTimes;
+        for (const time of times) {
+            const [hour, minute] = time.split(':').map(Number);
+            const now = new Date();
+            const target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute, 0);
+            // 如果今天的目标时间已过，设为明天
+            if (target <= now) {
+                target.setDate(target.getDate() + 1);
+            }
+            const initialDelay = target.getTime() - now.getTime();
+            const intervalMs = 24 * 60 * 60 * 1000; // 每天
+            // 首次延迟后，每天执行
+            const timer = setTimeout(() => {
+                this.syncAllRepos();
+                const dailyTimer = setInterval(() => this.syncAllRepos(), intervalMs);
+                this.syncTimers.push(dailyTimer);
+            }, initialDelay);
+            this.syncTimers.push(timer);
+        }
+        this.emit('scheduledSyncStart', { times, nextSyncIn: 'see console for details' });
+    }
+    stopScheduledSync() {
+        for (const timer of this.syncTimers) {
+            clearTimeout(timer);
+            clearInterval(timer);
+        }
+        this.syncTimers = [];
+        this.emit('scheduledSyncStop', {});
+    }
+    async syncAllRepos() {
+        for (const [repoType] of this.repos) {
+            try {
+                await this.syncRepo(repoType);
+            }
+            catch {
+                // 单个仓库失败不影响其他
+            }
+        }
+        this.emit('scheduledSyncComplete', { time: new Date().toISOString() });
     }
     /**
      * 注册仓库

@@ -45,7 +45,7 @@ L4 文件索引     → 引用外部文件
 | 研究 | 核心贡献 | 当前框架对照 |
 |------|---------|-------------|
 | MemORAI | Query-Adaptive PageRank 检索 | 自适应路由策略 (P1) |
-| MemMachine | Ground-truth 情节保留 | episodes/ 情节存储 (P0) |
+| MemMachine | Ground-truth 情节保留 | Git 全量快照 + 增量 diff (time-memory.sh) |
 | SPARK | 多智能体 Persona 协调 | 业务域识别 (P1) |
 | 残差趋零（首创） | 三层清理机制 | Layer 1/2/3 主动净化 |
 

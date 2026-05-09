@@ -9,10 +9,19 @@ export declare class System1Agent extends EventEmitter implements AgentInterface
     readonly role: AgentRole;
     readonly agentType: 'openclaw' | 'hermes' | 'claude-code' | 'opencode' | 'other';
     private _status;
-    get status(): 'idle' | 'processing' | 'error';
     private currentInput;
     private currentResult;
+    private goldPanRate;
     constructor(agentId: string, agentType: string);
+    /**
+     * 设置淘金率范围 (论文原则: 5%-15%)
+     */
+    setGoldPanRate(minRate: number, maxRate: number): void;
+    getGoldPanRate(): {
+        min: number;
+        max: number;
+    };
+    get status(): 'idle' | 'processing' | 'error';
     getStatus(): AgentStatus;
     startProcessing(input: MemoryRepresentation): Promise<void>;
     getResult(): Promise<MemoryRepresentation>;

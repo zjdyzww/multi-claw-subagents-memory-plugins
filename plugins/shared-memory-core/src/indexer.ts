@@ -20,6 +20,11 @@ interface IndexEntry {
 export class IndexEngine extends EventEmitter {
   private indexes: Map<RepoType, Map<string, IndexEntry>> = new Map();
   private searchIndex: IndexEntry[] = [];
+  private lastSearchMs = 0;
+  private searchCount = 0;
+  private totalSearchMs = 0;
+  private queryCache: Map<string, SearchResult[]> = new Map();
+  private readonly MAX_CACHE_SIZE = 50;
 
   constructor() {
     super();
@@ -153,6 +158,14 @@ export class IndexEngine extends EventEmitter {
    * 搜索记忆
    */
   async searchMemory(query: SearchQuery): Promise<SearchResult[]> {
+    const start = Date.now();
+    const cacheKey = `${query.text}|${(query.repoTypes || []).join(',')}|${(query.tags || []).join(',')}|${query.limit || 10}`;
+    const cached = this.queryCache.get(cacheKey);
+    if (cached) {
+      this.recordSearchTiming(Date.now() - start);
+      return cached;
+    }
+
     const results: SearchResult[] = [];
     const queryLower = query.text.toLowerCase();
 
@@ -222,7 +235,31 @@ export class IndexEngine extends EventEmitter {
     
     const offset = query.offset || 0;
     const limit = query.limit || 10;
-    return results.slice(offset, offset + limit);
+    const paginated = results.slice(offset, offset + limit);
+
+    // Cache & timing
+    if (this.queryCache.size >= this.MAX_CACHE_SIZE) {
+      const firstKey = this.queryCache.keys().next().value;
+      if (firstKey) this.queryCache.delete(firstKey);
+    }
+    this.queryCache.set(cacheKey, paginated);
+    this.recordSearchTiming(Date.now() - start);
+
+    return paginated;
+  }
+
+  private recordSearchTiming(ms: number): void {
+    this.searchCount++;
+    this.totalSearchMs += ms;
+    this.lastSearchMs = ms;
+  }
+
+  getSearchPerformance(): { avgMs: number; lastMs: number; totalQueries: number } {
+    return {
+      avgMs: this.searchCount > 0 ? Math.round(this.totalSearchMs / this.searchCount * 100) / 100 : 0,
+      lastMs: this.lastSearchMs,
+      totalQueries: this.searchCount,
+    };
   }
 
   /**

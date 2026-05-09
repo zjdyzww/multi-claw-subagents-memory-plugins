@@ -8,11 +8,9 @@ export class System1Agent extends EventEmitter {
     role = 'system1';
     agentType;
     _status;
-    get status() {
-        return this._status.status;
-    }
     currentInput = null;
     currentResult = null;
+    goldPanRate = { min: 0.05, max: 0.15 };
     constructor(agentId, agentType) {
         super();
         this.agentId = agentId;
@@ -25,6 +23,16 @@ export class System1Agent extends EventEmitter {
             errorCount: 0,
         };
     }
+    /**
+     * 设置淘金率范围 (论文原则: 5%-15%)
+     */
+    setGoldPanRate(minRate, maxRate) {
+        this.goldPanRate = { min: minRate, max: maxRate };
+    }
+    getGoldPanRate() { return { ...this.goldPanRate }; }
+    get status() {
+        return this._status.status;
+    }
     getStatus() {
         return { ...this._status };
     }
@@ -33,8 +41,9 @@ export class System1Agent extends EventEmitter {
         this.currentInput = input;
         this.emit('processingStarted', { agentId: this.agentId, input });
         try {
-            // System1 职责：按7项标准淘金式精炼
+            // System1 职责：按7项标准淘金式精炼，遵守 5%-15% 淘金率
             const refinedFacts = this.refineFacts(input.facts);
+            const goldPanRatio = input.facts.length > 0 ? refinedFacts.length / input.facts.length : 0;
             this.currentResult = {
                 id: input.id || `sys1-${Date.now()}`,
                 rawContent: input.rawContent,
@@ -47,9 +56,8 @@ export class System1Agent extends EventEmitter {
                     ...input.metadata,
                     totalFacts: input.facts.length,
                     refinedCount: refinedFacts.length,
-                    discardRate: input.facts.length > 0
-                        ? ((input.facts.length - refinedFacts.length) / input.facts.length)
-                        : 0,
+                    goldPanRatio: Math.round(goldPanRatio * 100) / 100,
+                    discardRate: Math.round((1 - goldPanRatio) * 100) / 100,
                 },
                 residualInfo: input.residualInfo,
             };

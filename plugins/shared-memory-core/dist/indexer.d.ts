@@ -6,6 +6,11 @@ import { MemoryDocument, SearchQuery, SearchResult, RepoType } from './types.js'
 export declare class IndexEngine extends EventEmitter {
     private indexes;
     private searchIndex;
+    private lastSearchMs;
+    private searchCount;
+    private totalSearchMs;
+    private queryCache;
+    private readonly MAX_CACHE_SIZE;
     constructor();
     /**
      * 从文件路径解析记忆文档
@@ -27,6 +32,12 @@ export declare class IndexEngine extends EventEmitter {
      * 搜索记忆
      */
     searchMemory(query: SearchQuery): Promise<SearchResult[]>;
+    private recordSearchTiming;
+    getSearchPerformance(): {
+        avgMs: number;
+        lastMs: number;
+        totalQueries: number;
+    };
     /**
      * 获取相关记忆
      */

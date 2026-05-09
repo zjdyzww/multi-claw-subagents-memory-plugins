@@ -18,12 +18,9 @@ export class System1Agent extends EventEmitter implements AgentInterface {
   public readonly role: AgentRole = 'system1';
   public readonly agentType: 'openclaw' | 'hermes' | 'claude-code' | 'opencode' | 'other';
   private _status: AgentStatus;
-
-  get status(): 'idle' | 'processing' | 'error' {
-    return this._status.status;
-  }
   private currentInput: MemoryRepresentation | null = null;
   private currentResult: MemoryRepresentation | null = null;
+  private goldPanRate: { min: number; max: number } = { min: 0.05, max: 0.15 };
 
   constructor(agentId: string, agentType: string) {
     super();
@@ -38,6 +35,19 @@ export class System1Agent extends EventEmitter implements AgentInterface {
     };
   }
 
+  /**
+   * 设置淘金率范围 (论文原则: 5%-15%)
+   */
+  setGoldPanRate(minRate: number, maxRate: number): void {
+    this.goldPanRate = { min: minRate, max: maxRate };
+  }
+
+  getGoldPanRate(): { min: number; max: number } { return { ...this.goldPanRate }; }
+
+  get status(): 'idle' | 'processing' | 'error' {
+    return this._status.status;
+  }
+
   getStatus(): AgentStatus {
     return { ...this._status };
   }
@@ -48,8 +58,9 @@ export class System1Agent extends EventEmitter implements AgentInterface {
     this.emit('processingStarted', { agentId: this.agentId, input });
 
     try {
-      // System1 职责：按7项标准淘金式精炼
+      // System1 职责：按7项标准淘金式精炼，遵守 5%-15% 淘金率
       const refinedFacts = this.refineFacts(input.facts);
+      const goldPanRatio = input.facts.length > 0 ? refinedFacts.length / input.facts.length : 0;
 
       this.currentResult = {
         id: input.id || `sys1-${Date.now()}`,
@@ -63,9 +74,8 @@ export class System1Agent extends EventEmitter implements AgentInterface {
           ...input.metadata,
           totalFacts: input.facts.length,
           refinedCount: refinedFacts.length,
-          discardRate: input.facts.length > 0
-            ? ((input.facts.length - refinedFacts.length) / input.facts.length)
-            : 0,
+          goldPanRatio: Math.round(goldPanRatio * 100) / 100,
+          discardRate: Math.round((1 - goldPanRatio) * 100) / 100,
         },
         residualInfo: input.residualInfo,
       };

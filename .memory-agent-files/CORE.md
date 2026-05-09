@@ -47,5 +47,5 @@ USER → 自适应路由 → System2/1融合 → 回答
 ├── CONFIG.md         # L3环境配置
 ├── RESIDUAL_QUEUE.md # 残差队列
 ├── INDEX.md          # L4文件索引
-└── episodes/         # 情节存储
+└── time-memory.sh    # 情节存储 (Git 全量快照 + 增量 diff)
 ```

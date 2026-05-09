@@ -38,23 +38,14 @@ multi-claw-subagents-memory-plugins/
 │   ├── claude-code/SKILL.md      # Claude Code 技能
 │   └── opencode/SKILL.md         # OpenCode 技能
 │
-├── .memory-agent-files/            # ⭐ 记忆强化核心文件
-│   ├── AGENT_PROMPT.md           # 完整代理提示词
-│   ├── SKILL_DUAL_THINKING.md   # 双系统协同技能
-│   ├── SKILL_MEMORY_MANAGER.md   # 记忆管理器技能
-│   ├── MEMORY_SYSTEM.md         # 记忆系统设计
-│   ├── MEMORY_INDEX.md          # 记忆索引结构
-│   ├── CORE.md                  # 核心架构
-│   ├── CONFIDENCE_PROPAGATION.md # 置信度传播
-│   ├── PATH_ANALYSIS.md         # 路径分析
-│   ├── PERSONA_COORDINATOR.md   # 角色协调器
-│   ├── RETRIEVAL_ROUTER.md      # 检索路由
-│   ├── RESIDUAL_QUEUE.md        # 残差队列
-│   ├── VERSION_*.md             # 版本管理
-│   ├── HERMES_INTEGRATION.md    # Hermes 集成指南
-│   ├── BUSINESS/                # 业务示例
-│   ├── episodes/                # 会话片段
-│   └── 论文_疯狂的简洁_记忆强化框架.md
+├── .memory-agent-files/            # ⭐ 记忆强化核心文件 (疯狂简洁: 7文件)
+│   ├── CORE.md                  # L1 核心原则
+│   ├── MEMORY.md                # L2 业务域记忆
+│   ├── CONFIG.md                # L3 运行时配置
+│   ├── INDEX.md                 # L4 快速检索索引
+│   ├── RESIDUAL_QUEUE.md        # 残差趋零队列
+│   ├── MEMORY_SYSTEM.md         # 系统设计规范
+│   └── MEMORY_INDEX.md          # 记忆索引结构
 │
 ├── plugins/                        # 插件源码
 │   ├── shared-memory-core/       # 共享核心库
@@ -413,17 +404,19 @@ MEMORY.md
 | `MEMORY_PALACE.md` | 每个网关的记忆宫殿规则 |
 | `SKILL.md` | 每个网关的记忆技能 |
 
-### 记忆强化核心文件
+### 记忆强化核心文件 (疯狂简洁: 7文件)
 
 | 文件 | 说明 |
 |------|------|
-| `AGENT_PROMPT.md` | 完整代理提示词 v2（直接注册） |
-| `SKILL_DUAL_THINKING.md` | 双系统协同技能 v2（海绵+淘金） |
-| `SKILL_MEMORY_MANAGER.md` | 记忆管理器技能 v2（一致性执行） |
-| `MEMORY_SYSTEM.md` | 记忆系统设计文档 v2 |
+| `CORE.md` | L1 核心原则 (3步最优路径) |
+| `MEMORY.md` | L2 业务域记忆 |
+| `CONFIG.md` | L3 运行时配置 |
+| `INDEX.md` | L4 快速检索索引 |
+| `RESIDUAL_QUEUE.md` | 残差趋零队列 (R = Σ(size×weight)) |
+| `MEMORY_SYSTEM.md` | 记忆系统设计规范 v2 |
 | `MEMORY_INDEX.md` | 记忆索引结构模板 |
-| `CORE.md` | 核心架构文档 |
-| `HERMES_INTEGRATION.md` | Hermes 集成指南 |
+
+> 设计文档实现于 TypeScript 代码中: `system2-agent.ts`, `system1-agent.ts`, `agent-communication.ts`, `confidence-engine.ts`, `router-engine.ts`, `persona-engine.ts`
 
 ---
 
