@@ -2,19 +2,29 @@
   "id": "shared-memory-core",
   "enabledByDefault": false,
   "name": "Shared Memory Core",
-  "description": "Shared memory core library for multi-agent memory plugins. Provides git sync, indexing, access control, and event bus functionality.",
+  "description": "Shared memory core library for multi-agent memory plugins. Provides git sync, indexing, access control, event bus, three-agent system (System2/System1/FullMemory), and agent communication.",
   "libraries": [
     "./access-control.js",
     "./event-bus.js",
     "./git-sync.js",
     "./indexer.js",
-    "./index.js"
+    "./index.js",
+    "./system2-agent.js",
+    "./system1-agent.js",
+    "./full-memory-agent-client.js",
+    "./full-memory-agent-server.js",
+    "./agent-communication.js"
   ],
   "exports": {
     "gitSyncManager": "./git-sync.js",
     "indexEngine": "./indexer.js",
     "accessControl": "./access-control.js",
-    "eventBus": "./event-bus.js"
+    "eventBus": "./event-bus.js",
+    "system2Agent": "./system2-agent.js",
+    "system1Agent": "./system1-agent.js",
+    "fullMemoryAgentClient": "./full-memory-agent-client.js",
+    "fullMemoryAgentServer": "./full-memory-agent-server.js",
+    "agentCommunicationManager": "./agent-communication.js"
   },
   "configSchema": {
     "type": "object",

@@ -2,7 +2,7 @@
  * OpenClaw Memory Plugin
  * OpenClaw 智能体记忆管理插件
  */
-import { gitSyncManager, indexEngine, eventBus } from '@multi-claw/shared-memory-core';
+import { gitSyncManager, indexEngine, eventBus, routerEngine, confidenceEngine, personaEngine, residualEngine, vectorEngine, fusionEngine, metacognitionEngine } from '@multi-claw/shared-memory-core';
 import { homedir } from 'os';
 // 工具函数：保存记忆
 export async function saveMemory(params) {
@@ -141,6 +141,204 @@ export async function getMemoryStatus() {
     }
     return { repos };
 }
+// -------- v10 新增工具 --------
+// 工具函数：置信度标注
+export async function annotateMemory(params) {
+    try {
+        const indexed = await indexEngine.searchMemory({ text: params.docId, limit: 1 });
+        if (indexed.length === 0) {
+            return { success: false, error: `Document ${params.docId} not found in index` };
+        }
+        const doc = indexed[0].document;
+        confidenceEngine.annotate(doc, params.level, params.source, params.reason || 'manual annotation', params.reason);
+        return { success: true };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
+// 工具函数：路由查询
+export async function routeQuery(params) {
+    try {
+        const decision = routerEngine.classifyQuery(params.query, {
+            preferSpeed: params.preferSpeed,
+            preferAccuracy: params.preferAccuracy,
+            availableAgents: ['sys2', 'sys1', 'full_client', 'full_server'],
+        });
+        const results = await routerEngine.executeQuery(decision, indexEngine, {
+            text: params.query,
+            limit: decision.strategy === 'parallel' ? 20 : 10,
+        });
+        return {
+            success: true,
+            decision: {
+                strategy: decision.strategy,
+                targetAgents: decision.targetAgents,
+                reason: decision.reason,
+            },
+            results: results.map(r => ({
+                path: r.document.id,
+                repo: r.document.repoType,
+                score: r.score,
+                preview: r.highlights.join('; '),
+            })),
+        };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
+// 工具函数：专家协作评估
+export async function collaborateMemory(params) {
+    try {
+        const facts = (params.facts || []).map((f, i) => ({
+            id: `collab-f${i}`,
+            content: f.content,
+            confidence: f.confidence || 'UNCERTAIN',
+            source: 'user',
+            category: 'collaboration',
+            verified: false,
+        }));
+        const input = {
+            id: `collab-${Date.now()}`,
+            rawContent: params.content,
+            facts,
+            confidence: 'UNCERTAIN',
+            source: 'conversation',
+            timestamp: new Date().toISOString(),
+        };
+        const result = await personaEngine.collaborate(input);
+        return {
+            success: true,
+            consensus: result.consensusConfidence,
+            votes: result.votes,
+            summary: result.summary,
+            opinions: result.opinions.map(o => ({
+                persona: o.personaName,
+                confidence: o.confidence,
+                reasoning: o.reasoning,
+            })),
+        };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
+// 工具函数：残差队列管理
+export async function getResidualStatus() {
+    try {
+        const stats = residualEngine.getStats();
+        return {
+            success: true,
+            stats: {
+                total: stats.totalResiduals,
+                layer1: stats.layer1Count,
+                layer2: stats.layer2Count,
+                layer3: stats.layer3Count,
+                totalScore: stats.totalScore,
+            },
+        };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
+// 辅助函数
+// -------- v13 新增工具 --------
+// 工具函数：向量语义检索
+export async function vectorSearch(params) {
+    try {
+        const results = vectorEngine.search(params.query, {
+            topK: params.topK || 10,
+            repoTypes: params.repoTypes,
+            filterTags: params.filterTags,
+        });
+        return {
+            success: true,
+            results: results.map(r => ({
+                id: r.document.id,
+                score: Math.round(r.score * 100) / 100,
+                title: r.document.title,
+                preview: r.document.content?.substring(0, 200) || '',
+            })),
+            stats: vectorEngine.getStats(),
+        };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
+// 工具函数：记忆融合去重
+export async function fuseMemory(params) {
+    try {
+        const docs = [];
+        for (const docId of params.docIds) {
+            const results = await indexEngine.searchMemory({ text: docId, limit: 1 });
+            if (results.length > 0)
+                docs.push(results[0].document);
+        }
+        if (docs.length < 2)
+            return { success: false, error: 'Need at least 2 documents to fuse' };
+        const result = fusionEngine.fusionPair(docs[0], docs[1]);
+        return {
+            success: true,
+            merged: {
+                title: result.mergedDocument.title || 'Fused',
+                content: result.mergedDocument.content || '',
+                factCount: result.facts.length,
+                mergedFrom: result.mergedFrom,
+            },
+        };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
+// 工具函数：记忆质量评估
+export async function assessMemoryQuality(params) {
+    try {
+        // Batch assess all indexed docs
+        if (!params.docId) {
+            const results = await indexEngine.searchMemory({ text: '', limit: 100 });
+            metacognitionEngine.assessBatch(results.map(r => r.document));
+            const stats = metacognitionEngine.getStats();
+            return {
+                success: true,
+                report: {
+                    title: 'Global Memory Quality Assessment',
+                    score: stats.averageScore,
+                    completeness: 0,
+                    freshness: 0,
+                    consistency: 0,
+                    confidenceBalance: 0,
+                    issues: stats.topIssues.map(i => ({ type: i.type, severity: 'medium', description: `${i.count} documents affected` })),
+                    recommendations: ['Review top issues above'],
+                },
+            };
+        }
+        // Single doc assessment
+        const results = await indexEngine.searchMemory({ text: params.docId, limit: 1 });
+        if (results.length === 0)
+            return { success: false, error: 'Document not found' };
+        const report = metacognitionEngine.assess(results[0].document);
+        return {
+            success: true,
+            report: {
+                title: report.title,
+                score: report.scores.overall,
+                completeness: report.scores.completeness,
+                freshness: report.scores.freshness,
+                consistency: report.scores.consistency,
+                confidenceBalance: report.scores.confidenceBalance,
+                issues: report.issues.map(i => ({ type: i.type, severity: i.severity, description: i.description })),
+                recommendations: report.recommendations,
+            },
+        };
+    }
+    catch (error) {
+        return { success: false, error: String(error) };
+    }
+}
 // 辅助函数
 function getRepoPath(repo) {
     const basePath = process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
@@ -187,6 +385,13 @@ export function registerOpenClawMemoryPlugin(api) {
     api.registerTool('memory_search', searchMemory);
     api.registerTool('memory_sync', syncMemory);
     api.registerTool('memory_status', getMemoryStatus);
+    api.registerTool('memory_annotate', annotateMemory);
+    api.registerTool('memory_route', routeQuery);
+    api.registerTool('memory_collaborate', collaborateMemory);
+    api.registerTool('memory_residuals', getResidualStatus);
+    api.registerTool('memory_vector_search', vectorSearch);
+    api.registerTool('memory_fuse', fuseMemory);
+    api.registerTool('memory_assess', assessMemoryQuality);
     // 注册技能
     api.registerSkill({
         name: 'openclaw-memory',

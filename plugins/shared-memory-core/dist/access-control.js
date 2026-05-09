@@ -42,12 +42,12 @@ export class AccessControl extends EventEmitter {
             allowedAgents: ['*'],
             deniedAgents: []
         });
-        // 私有仓规则 - 仅创建者可访问
+        // 私有仓规则 - 仅注册的智能体所有者可访问，拒绝跨网关访问
         this.rules.set('private', {
             repoType: 'private',
             accessLevel: 'PRIVATE',
-            allowedAgents: ['*'],
-            deniedAgents: []
+            allowedAgents: [],
+            deniedAgents: ['*']
         });
     }
     /**
@@ -85,6 +85,23 @@ export class AccessControl extends EventEmitter {
         const rule = this.rules.get(repoType);
         // 获取智能体的实际访问级别
         const actualLevel = this.getAgentAccessLevel(agentId, repoType);
+        // 私有仓强校验：agentId 必须包含 agentType
+        if (repoType === 'private') {
+            if (!agent || !agentId.includes(agent.agentType)) {
+                return {
+                    allowed: false,
+                    reason: `Agent ${agentId} is not the owner of this private repository`,
+                    requiredLevel,
+                    actualLevel: 'PRIVATE'
+                };
+            }
+            return {
+                allowed: true,
+                reason: `Access granted as private repo owner with level ${actualLevel}`,
+                requiredLevel,
+                actualLevel
+            };
+        }
         // 检查规则
         if (!rule) {
             return {
@@ -139,15 +156,15 @@ export class AccessControl extends EventEmitter {
         if (!agent) {
             return 'PRIVATE'; // 默认最低级别
         }
-        // 私有仓库只有创建者或同类型智能体可访问
+        // 私有仓库：仅所有者可访问（agentId 必须匹配 agentType）
         if (repoType === 'private') {
-            // 检查是否是该智能体的私有仓库
             if (agentId.includes(agent.agentType)) {
-                return 'PRIVATE'; // 所有者
+                return 'PRIVATE';
             }
+            // 非所有者尝试访问私有仓 → 拒绝
             return 'PRIVATE';
         }
-        // 公共仓库根据智能体类型决定
+        // 公共仓库：根据智能体类型决定
         if (agent.agentType === 'openclaw' || agent.agentType === 'hermes' ||
             agent.agentType === 'claude-code' || agent.agentType === 'opencode') {
             return 'SHARED_WRITE';

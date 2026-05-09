@@ -23,7 +23,7 @@ Hermes 是记忆同步的协调者，负责在各网关之间路由记忆。
 ├── archive/                  # 归档
 │   ├── residuals/           # 残差归档
 │   └── old_versions/       # 旧版本归档
-├── episodes/                 # 情节存储
+├── time-memory.sh             # 情节存储 (Git 全量快照)
 ├── skills/                   # 技能
 │   ├── productivity/
 │   │   ├── dual-thinking/  # 双系统技能
@@ -116,9 +116,9 @@ memory.broadcast --log
 Hermes 作为协调者，需要 100% 吸收各网关的广播：
 
 ```
-1. 接收 OpenClaw 广播 → 记录到 episodes/
-2. 接收 Claude Code 广播 → 记录到 episodes/
-3. 接收 OpenCode 广播 → 记录到 episodes/
+1. 接收 OpenClaw 广播 → Git commit 到时间记忆
+2. 接收 Claude Code 广播 → Git commit 到时间记忆
+3. 接收 OpenCode 广播 → Git commit 到时间记忆
 4. 构建完整记忆表象
 ```
 
@@ -127,7 +127,7 @@ Hermes 作为协调者，需要 100% 吸收各网关的广播：
 从海量广播中提炼高价值信息：
 
 ```
-1. 扫描所有 episodes/
+1. 扫描所有 Git 仓库内存记忆
 2. 识别重大变更
 3. 更新 L2_BUSINESS
 4. 广播给所有网关

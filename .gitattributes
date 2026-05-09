@@ -1,0 +1,25 @@
+# Force LF line endings for all text files
+* text=auto
+
+# Scripts must use LF
+*.sh text eol=lf
+*.bash text eol=lf
+
+# TypeScript source
+*.ts text eol=lf
+*.tsx text eol=lf
+
+# Config files
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary

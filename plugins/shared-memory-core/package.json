@@ -1,6 +1,6 @@
 {
   "name": "@multi-claw/shared-memory-core",
-  "version": "1.0.0",
+  "version": "13.0.0",
   "description": "Shared memory core library for multi-agent memory plugins",
   "type": "module",
   "main": "dist/index.js",
@@ -15,18 +15,21 @@
   "scripts": {
     "build": "tsc && npm run copy:manifest",
     "build:ts": "tsc",
-    "copy:manifest": "cp openclaw.plugin.json dist/",
+    "copy:manifest": "node -e \"require('fs').copyFileSync('openclaw.plugin.json','dist/openclaw.plugin.json')\"",
     "dev": "tsc --watch",
-    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "simple-git": "^3.22.0",
-    "gray-matter": "^4.0.3",
     "chokidar": "^3.5.3",
-    "eventemitter3": "^5.0.1"
+    "eventemitter3": "^5.0.1",
+    "gray-matter": "^4.0.3",
+    "simple-git": "^3.22.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "vitest": "^4.1.5"
   }
 }

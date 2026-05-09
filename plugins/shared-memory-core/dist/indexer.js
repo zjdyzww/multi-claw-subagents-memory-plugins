@@ -8,6 +8,11 @@ import * as path from 'path';
 export class IndexEngine extends EventEmitter {
     indexes = new Map();
     searchIndex = [];
+    lastSearchMs = 0;
+    searchCount = 0;
+    totalSearchMs = 0;
+    queryCache = new Map();
+    MAX_CACHE_SIZE = 50;
     constructor() {
         super();
         // 初始化各仓库的索引
@@ -65,7 +70,7 @@ export class IndexEngine extends EventEmitter {
         if (!doc)
             return;
         // 从文件路径获取相对路径作为索引键
-        const relativePath = path.relative(filePath, filePath).replace(/^(\.\/|\\)/, '');
+        const relativePath = path.basename(filePath);
         repoIndex.set(relativePath, {
             path: filePath,
             repoType,
@@ -130,6 +135,13 @@ export class IndexEngine extends EventEmitter {
      * 搜索记忆
      */
     async searchMemory(query) {
+        const start = Date.now();
+        const cacheKey = `${query.text}|${(query.repoTypes || []).join(',')}|${(query.tags || []).join(',')}|${query.limit || 10}`;
+        const cached = this.queryCache.get(cacheKey);
+        if (cached) {
+            this.recordSearchTiming(Date.now() - start);
+            return cached;
+        }
         const results = [];
         const queryLower = query.text.toLowerCase();
         // 确定搜索范围
@@ -191,7 +203,28 @@ export class IndexEngine extends EventEmitter {
         results.sort((a, b) => b.score - a.score);
         const offset = query.offset || 0;
         const limit = query.limit || 10;
-        return results.slice(offset, offset + limit);
+        const paginated = results.slice(offset, offset + limit);
+        // Cache & timing
+        if (this.queryCache.size >= this.MAX_CACHE_SIZE) {
+            const firstKey = this.queryCache.keys().next().value;
+            if (firstKey)
+                this.queryCache.delete(firstKey);
+        }
+        this.queryCache.set(cacheKey, paginated);
+        this.recordSearchTiming(Date.now() - start);
+        return paginated;
+    }
+    recordSearchTiming(ms) {
+        this.searchCount++;
+        this.totalSearchMs += ms;
+        this.lastSearchMs = ms;
+    }
+    getSearchPerformance() {
+        return {
+            avgMs: this.searchCount > 0 ? Math.round(this.totalSearchMs / this.searchCount * 100) / 100 : 0,
+            lastMs: this.lastSearchMs,
+            totalQueries: this.searchCount,
+        };
     }
     /**
      * 获取相关记忆

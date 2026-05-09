@@ -64,7 +64,7 @@
 | `~/.hermes/memories/L2_BUSINESS/` | L2业务主线（按需加载） |
 | `~/.hermes/memories/L3_CONFIG/` | L3环境配置（按需加载） |
 | `~/.hermes/memories/L4_INDEX/` | L4文件索引（按需加载） |
-| `~/.hermes/memories/episodes/` | 情节存储（跨会话追溯） |
+| `time-memory.sh (Git history)` | 情节存储（全量快照 + 增量追溯） |
 | `~/.hermes/memories/RESIDUAL_QUEUE.md` | 残差队列（趋零管理） |
 | `~/.hermes/memories/MEMORY_SYSTEM.md` | 记忆系统设计文档 v3 |
 | `/home/myz/hermes-memory/` | gitea 记忆仓库本地克隆 |

@@ -1,0 +1,23 @@
+{
+  "name": "multi-claw-subagents-memory-plugins",
+  "version": "1.0.0",
+  "description": "> **多智能体多网关多代理记忆增强插件系统**  \r > **版本**: v10.0 | **日期**: 2026-05-09",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vitest": "^4.1.5"
+  }
+}

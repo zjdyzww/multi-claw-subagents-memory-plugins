@@ -3,7 +3,7 @@
  */
 
 import { EventEmitter } from 'eventemitter3';
-import { MemoryEvent, MemoryEventType, AgentInfo } from './types.js';
+import { MemoryEvent, MemoryEventType, AgentInfo, RepoType } from './types.js';
 
 interface EventSubscription {
   id: string;
@@ -120,7 +120,7 @@ export class EventBus extends EventEmitter {
     this.publish({
       type: 'memory.created',
       agentId,
-      repoType: repoType as any,
+      repoType: repoType as RepoType,
       payload: { docId, path },
       timestamp: new Date().toISOString()
     });
@@ -133,7 +133,7 @@ export class EventBus extends EventEmitter {
     this.publish({
       type: 'memory.updated',
       agentId,
-      repoType: repoType as any,
+      repoType: repoType as RepoType,
       payload: { docId, path, changes },
       timestamp: new Date().toISOString()
     });
@@ -146,7 +146,7 @@ export class EventBus extends EventEmitter {
     this.publish({
       type: 'memory.deleted',
       agentId,
-      repoType: repoType as any,
+      repoType: repoType as RepoType,
       payload: { docId, path },
       timestamp: new Date().toISOString()
     });
@@ -159,7 +159,7 @@ export class EventBus extends EventEmitter {
     this.publish({
       type: 'memory.synced',
       agentId,
-      repoType: repoType as any,
+      repoType: repoType as RepoType,
       payload: result,
       timestamp: new Date().toISOString()
     });
@@ -172,7 +172,7 @@ export class EventBus extends EventEmitter {
     this.publish({
       type: 'conflict.detected',
       agentId,
-      repoType: repoType as any,
+      repoType: repoType as RepoType,
       payload: { conflicts },
       timestamp: new Date().toISOString()
     });

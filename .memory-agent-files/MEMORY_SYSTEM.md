@@ -1,7 +1,7 @@
-# Memory System Design — 记忆系统设计文档 v4
+# Memory System Design — 三代理协作记忆系统设计 v5
 
 > 架构原理 · 设计决策 · 理论基础
-> 核心升级：System 2 海绵式全量吸收 ↔ 自适应路由检索 ↔ 置信度传播 ↔ 残差趋零清理 ↔ 三地一致性
+> 核心升级：v5.1 全量记忆代理 Server+Client 双层架构——Server 端远程同步与广播，Client 端本地文件管理与残差调度
 > P0: 分段检索 + 情节存储
 > P1: 自适应路由策略 + 置信度传播机制
 
@@ -45,7 +45,7 @@ L4 文件索引     → 引用外部文件
 | 研究 | 核心贡献 | 当前框架对照 |
 |------|---------|-------------|
 | MemORAI | Query-Adaptive PageRank 检索 | 自适应路由策略 (P1) |
-| MemMachine | Ground-truth 情节保留 | episodes/ 情节存储 (P0) |
+| MemMachine | Ground-truth 情节保留 | Git 全量快照 + 增量 diff (time-memory.sh) |
 | SPARK | 多智能体 Persona 协调 | 业务域识别 (P1) |
 | 残差趋零（首创） | 三层清理机制 | Layer 1/2/3 主动净化 |
 

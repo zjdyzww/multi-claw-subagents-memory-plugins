@@ -3,7 +3,7 @@
 > 版本: v8 | 2026-05-07 | 路径: 3步最优
 
 ## 公司
-- 东阳景程智造科技
+- 东阳晓智科技
 - 工业机械臂工厂
 - 战略: 人形机器人 + 智能制造
 
@@ -12,9 +12,9 @@
 - #00d4ff（蓝） + #09b59ff（紫）
 
 ## 关键配置
-- 微信: o9cq804ku-3JCr7N4rZgR4rqkPTg@im.wechat
-- gitea: https://git.osc.life/myz/hermes-memory
-- Node.js: /home/myz/.nvm/versions/node/v24.15.0/bin/
+- 智能体安装软硬\操作系统\网络\配套软件等环境
+- git: git服务器相关信息
+- 其他: 支持的智能体类型等
 
 ## 双系统 v6（融合版）
 ```
@@ -47,5 +47,5 @@ USER → 自适应路由 → System2/1融合 → 回答
 ├── CONFIG.md         # L3环境配置
 ├── RESIDUAL_QUEUE.md # 残差队列
 ├── INDEX.md          # L4文件索引
-└── episodes/         # 情节存储
+└── time-memory.sh    # 情节存储 (Git 全量快照 + 增量 diff)
 ```
