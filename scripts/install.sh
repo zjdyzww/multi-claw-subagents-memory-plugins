@@ -1,10 +1,11 @@
 #!/bin/bash
-# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v6.1
+# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v7.0
 #
 # 功能:
 # 1. 创建记忆仓库（默认每种类型1个）
-# 2. 安装记忆宫殿到各网关
-# 3. 动态增加私有仓库数量
+# 2. 安装记忆宫殿到各网关 (OpenClaw/Hermes/ClaudeCode/OpenCode)
+# 3. 安装 MCP 服务器到 OpenCode / Claude Desktop
+# 4. 动态增加私有仓库数量
 #
 # 用法:
 #   # 初始安装（默认每种1个）
@@ -23,12 +24,21 @@
 #   # 查看状态
 #   bash install.sh --status --gitgroup-name <group-name>
 #
-# LLM Agent 用法:
+# LLM Agent 用法 (OpenClaw):
 #   add multi-claw-subagents-memory-plugins where \
 #     plugins-url=https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
 #     gitserver-url=https://git.osc.life \
 #     gitserver-token=<TOKEN> \
 #     gitgroup-name=claws-memory
+#
+# OpenCode 用法:
+#   bash install.sh \
+#     --plugins-url <URL> \
+#     --gitserver-url <URL> \
+#     --gitserver-token <TOKEN> \
+#     --gitgroup-name <group-name> \
+#     --install-opencode  \
+#     --opencode-config ~/.config/opencode/opencode.json
 
 set -e
 
@@ -50,6 +60,8 @@ CLAUDE_CODE_COUNT=1
 MODE="install"
 ADD_AGENT_TYPE=""
 ADD_AGENT_COUNT=""
+INSTALL_OPENCODE_MCP="${INSTALL_OPENCODE_MCP:-false}"
+OPENCODE_CONFIG_PATH="${OPENCODE_CONFIG_PATH:-$HOME/.config/opencode/opencode.json}"
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
@@ -81,6 +93,8 @@ while [[ $# -gt 0 ]]; do
       done
       shift 2 ;;
     --local-path) LOCAL_PATH="$2"; shift 2 ;;
+    --install-opencode) INSTALL_OPENCODE_MCP="true"; shift ;;
+    --opencode-config) OPENCODE_CONFIG_PATH="$2"; shift 2 ;;
     *) echo "未知参数: $1"; shift ;;
   esac
 done
@@ -104,8 +118,8 @@ print_banner() {
   echo ""
   echo -e "${GREEN}╔══════════════════════════════════════════════════════════╗${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
-  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v6.1 ║${NC}"
-  echo -e "${GREEN}║   一次安装 + 动态扩展                              ║${NC}"
+  echo -e "${GREEN}║   Multi-Claw Subagents Memory Plugins Installer v7.0 ║${NC}"
+  echo -e "${GREEN}║   一次安装 + 动态扩展 + MCP 桥接                   ║${NC}"
   echo -e "${GREEN}║                                                          ║${NC}"
   echo -e "${GREEN}╚══════════════════════════════════════════════════════════╝${NC}"
   echo ""
@@ -452,7 +466,7 @@ install_claude_code() {
   log_success "  ✅ Claude Code 记忆宫殿安装完成"
 }
 
-# 安装 OpenCode 记忆宫殿
+# 安装 OpenCode 记忆宫殿 + MCP 服务器
 install_opencode() {
   if [[ "$OPENCODE_COUNT" -eq 0 ]]; then
     return
@@ -479,6 +493,75 @@ install_opencode() {
   cp -r "$LOCAL_PATH/.memory-agent-files/"* "$OPENCODE_PATH/memory-agent-files/" 2>/dev/null || true
   
   log_success "  ✅ OpenCode 记忆宫殿安装完成"
+  
+  # MCP 服务器安装
+  if [[ "$INSTALL_OPENCODE_MCP" == "true" ]]; then
+    install_opencode_mcp
+  fi
+}
+
+# 安装 OpenCode MCP 服务器
+install_opencode_mcp() {
+  log_step "安装 OpenCode MCP 服务器..."
+  
+  local MCP_SRC="$LOCAL_PATH/mcp-server"
+  local MCP_DEST="$OPENCODE_PATH/mcp-servers/multi-claw-memory"
+  
+  if [[ ! -d "$MCP_SRC" ]]; then
+    log_warn "  MCP 服务器源码不存在: $MCP_SRC"
+    return 1
+  fi
+  
+  mkdir -p "$MCP_DEST"
+  cp -r "$MCP_SRC/"* "$MCP_DEST/" 2>/dev/null || true
+  
+  # 安装依赖
+  cd "$MCP_DEST"
+  if command -v npm &>/dev/null; then
+    npm install --production 2>&1 | tail -1 || true
+  fi
+  
+  log_info "  MCP 服务器已安装到: $MCP_DEST"
+  
+  # 更新 OpenCode 配置
+  local CONFIG_PATH="${OPENCODE_CONFIG_PATH:-$HOME/.config/opencode/opencode.json}"
+  if [[ -f "$CONFIG_PATH" ]]; then
+    log_info "  检测到 OpenCode 配置: $CONFIG_PATH"
+    
+    # 检查是否已配置
+    if grep -q "multi_claw_memory" "$CONFIG_PATH" 2>/dev/null; then
+      log_info "  MCP 已注册，跳过"
+    else
+      log_info "  添加 MCP 配置到 opencode.json..."
+      # 使用 Python 或 node 来编辑 JSON（更安全）
+      if command -v node &>/dev/null; then
+        node -e "
+const fs = require('fs');
+let config;
+try { config = JSON.parse(fs.readFileSync('$CONFIG_PATH','utf8')); } catch(e) { config = {}; }
+if (!config.mcp) config.mcp = {};
+config.mcp.multi_claw_memory = {
+  type: 'local',
+  command: ['node', '$MCP_DEST/server.mjs'],
+  enabled: true,
+  description: 'Multi-Claw Memory: 向量检索/残差清理/自适应路由/置信度分析/4专家协作/遗忘曲线/记忆融合/图建模/质量评估'
+};
+fs.writeFileSync('$CONFIG_PATH', JSON.stringify(config, null, 2));
+" 2>/dev/null && log_success "  ✅ MCP 配置已写入 opencode.json" || log_warn "  ⚠ 请手动添加 MCP 配置"
+      else
+        log_warn "  node 不可用，请手动添加 MCP 配置到 $CONFIG_PATH"
+      fi
+    fi
+  else
+    log_warn "  OpenCode 配置不存在: $CONFIG_PATH"
+    echo ""
+    echo "  手动添加以下内容到 opencode.json 的 mcp 部分:"
+    echo '  "multi_claw_memory": {'
+    echo '    "type": "local",'
+    echo '    "command": ["node", "'"$MCP_DEST"'/server.mjs"],'
+    echo '    "enabled": true'
+    echo '  }'
+  fi
 }
 
 # 查看状态

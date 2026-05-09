@@ -1,0 +1,21 @@
+{
+  "name": "@multi-claw/mcp-server",
+  "version": "13.0.0",
+  "description": "Multi-Claw Memory MCP Server — OpenCode 桥接",
+  "type": "module",
+  "main": "server.mjs",
+  "bin": {
+    "multi-claw-memory": "./server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@multi-claw/shared-memory-core": "file:../plugins/shared-memory-core"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

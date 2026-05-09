@@ -84,20 +84,21 @@ add multi-claw-subagents-memory-plugins where
   gitgroup-name=claws-memory
 ```
 
-OpenClaw 将自动执行以下步骤：
-1. 创建 Gitea 记忆仓库（公共 + 私有）
-2. 克隆插件仓库到 `~/.openclaw/memory-plugins` 和 `~/.openclaw/plugin-repos/`
-3. 安装 npm 依赖并编译 TypeScript 插件
-4. 配置 `openclaw.json` 中插件加载路径
-5. 安装记忆宫殿到所有网关（OpenClaw / Hermes / Claude Code / OpenCode）
+### 方法二：通过 OpenCode MCP 安装
 
-**参数说明：**
-- `plugins-url`: 插件仓库地址
-- `gitserver-url`: Git 服务器地址（Gitea）
-- `gitserver-token`: Gitea 访问令牌
-- `gitgroup-name`: Gitea 组织名（用于创建记忆仓库）
+```bash
+bash scripts/install.sh \
+  --plugins-url https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins \
+  --gitserver-url https://git.osc.life \
+  --gitserver-token <YOUR_GITEA_TOKEN> \
+  --gitgroup-name claws-memory \
+  --install-opencode \
+  --opencode-config "$HOME/.config/opencode/opencode.json"
+```
 
-### 方法二：安装脚本
+自动完成：创建仓库 → 安装记忆宫殿 → 安装 MCP 服务器 (11 工具) → 注册到 opencode.json
+
+### 方法三：安装脚本
 
 ```bash
 bash <(curl -sL https://git.osc.life/yushanhe/multi-claw-subagents-memory-plugins/raw/main/scripts/install.sh) \
