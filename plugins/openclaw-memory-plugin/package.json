@@ -1,6 +1,6 @@
 {
   "name": "@multi-claw/openclaw-memory-plugin",
-  "version": "9.0.0",
+  "version": "13.0.0",
   "description": "OpenClaw memory plugin for multi-agent memory management",
   "type": "module",
   "main": "dist/index.js",

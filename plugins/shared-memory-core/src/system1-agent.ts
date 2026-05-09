@@ -135,12 +135,7 @@ export class System1Agent extends EventEmitter implements AgentInterface {
     const configPatterns = /(修改|配置|设置|部署|安装|升级|回滚)/;
     const vaguePatterns = /(可能|大概|也许|应该|好像|似乎|不一定|还不确定)/;
 
-    // 歧义或模糊表达 → 保持 UNCERTAIN
-    if (vaguePatterns.test(content)) {
-      return { confidence: 'UNCERTAIN', verified: false };
-    }
-
-    // 用户明确表达 → CONFIRMED
+    // 用户明确表达 → CONFIRMED (优先检查)
     if (explicitPatterns.test(content)) {
       return { confidence: 'CONFIRMED', verified: true };
     }
@@ -148,6 +143,11 @@ export class System1Agent extends EventEmitter implements AgentInterface {
     // 关键决策 → CONFIRMED
     if (decisionPatterns.test(content)) {
       return { confidence: 'CONFIRMED', verified: true };
+    }
+
+    // 歧义或模糊表达 → 保持 UNCERTAIN
+    if (vaguePatterns.test(content)) {
+      return { confidence: 'UNCERTAIN', verified: false };
     }
 
     // 配置/环境变更 → LIKELY

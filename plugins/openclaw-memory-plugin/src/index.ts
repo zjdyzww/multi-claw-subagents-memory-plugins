@@ -3,8 +3,8 @@
  * OpenClaw 智能体记忆管理插件
  */
 
-import { gitSyncManager, indexEngine, accessControl, eventBus } from '@multi-claw/shared-memory-core';
-import type { RepoType, MemoryDocument, SearchQuery, SyncResult } from '@multi-claw/shared-memory-core';
+import { gitSyncManager, indexEngine, accessControl, eventBus, routerEngine, confidenceEngine, personaEngine, residualEngine, vectorEngine, fusionEngine, metacognitionEngine } from '@multi-claw/shared-memory-core';
+import type { RepoType, MemoryDocument, SearchQuery, SyncResult, ConfidenceLevel, MemoryRepresentation, FactPoint } from '@multi-claw/shared-memory-core';
 import { homedir } from 'os';
 
 // 插件配置
@@ -198,6 +198,265 @@ export async function getMemoryStatus(): Promise<{
   return { repos };
 }
 
+// -------- v10 新增工具 --------
+
+// 工具函数：置信度标注
+export async function annotateMemory(params: {
+  docId: string;
+  level: ConfidenceLevel;
+  source: string;
+  reason?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const indexed = await indexEngine.searchMemory({ text: params.docId, limit: 1 });
+    if (indexed.length === 0) {
+      return { success: false, error: `Document ${params.docId} not found in index` };
+    }
+
+    const doc = indexed[0].document;
+    confidenceEngine.annotate(doc, params.level, params.source, params.reason || 'manual annotation', params.reason);
+
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+// 工具函数：路由查询
+export async function routeQuery(params: {
+  query: string;
+  preferSpeed?: boolean;
+  preferAccuracy?: boolean;
+}): Promise<{
+  success: boolean;
+  decision?: {
+    strategy: string;
+    targetAgents: string[];
+    reason: string;
+  };
+  results?: Array<{ path: string; repo: string; score: number; preview: string }>;
+  error?: string;
+}> {
+  try {
+    const decision = routerEngine.classifyQuery(params.query, {
+      preferSpeed: params.preferSpeed,
+      preferAccuracy: params.preferAccuracy,
+      availableAgents: ['sys2', 'sys1', 'full_client', 'full_server'],
+    });
+
+    const results = await routerEngine.executeQuery(decision, indexEngine, {
+      text: params.query,
+      limit: decision.strategy === 'parallel' ? 20 : 10,
+    });
+
+    return {
+      success: true,
+      decision: {
+        strategy: decision.strategy,
+        targetAgents: decision.targetAgents,
+        reason: decision.reason,
+      },
+      results: results.map(r => ({
+        path: r.document.id,
+        repo: r.document.repoType,
+        score: r.score,
+        preview: r.highlights.join('; '),
+      })),
+    };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+// 工具函数：专家协作评估
+export async function collaborateMemory(params: {
+  content: string;
+  facts?: Array<{ content: string; confidence?: ConfidenceLevel }>;
+}): Promise<{
+  success: boolean;
+  consensus?: string;
+  votes?: Record<string, number>;
+  summary?: string;
+  opinions?: Array<{ persona: string; confidence: string; reasoning: string }>;
+  error?: string;
+}> {
+  try {
+    const facts: FactPoint[] = (params.facts || []).map((f, i) => ({
+      id: `collab-f${i}`,
+      content: f.content,
+      confidence: f.confidence || 'UNCERTAIN',
+      source: 'user',
+      category: 'collaboration',
+      verified: false,
+    }));
+
+    const input: MemoryRepresentation = {
+      id: `collab-${Date.now()}`,
+      rawContent: params.content,
+      facts,
+      confidence: 'UNCERTAIN',
+      source: 'conversation',
+      timestamp: new Date().toISOString(),
+    };
+
+    const result = await personaEngine.collaborate(input);
+
+    return {
+      success: true,
+      consensus: result.consensusConfidence,
+      votes: result.votes,
+      summary: result.summary,
+      opinions: result.opinions.map(o => ({
+        persona: o.personaName,
+        confidence: o.confidence,
+        reasoning: o.reasoning,
+      })),
+    };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+// 工具函数：残差队列管理
+export async function getResidualStatus(): Promise<{
+  success: boolean;
+  stats?: {
+    total: number;
+    layer1: number;
+    layer2: number;
+    layer3: number;
+    totalScore: number;
+  };
+  error?: string;
+}> {
+  try {
+    const stats = residualEngine.getStats();
+    return {
+      success: true,
+      stats: {
+        total: stats.totalResiduals,
+        layer1: stats.layer1Count,
+        layer2: stats.layer2Count,
+        layer3: stats.layer3Count,
+        totalScore: stats.totalScore,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+// 辅助函数
+
+// -------- v13 新增工具 --------
+
+// 工具函数：向量语义检索
+export async function vectorSearch(params: {
+  query: string;
+  topK?: number;
+  repoTypes?: RepoType[];
+  filterTags?: string[];
+}): Promise<{ success: boolean; results?: Array<{ id: string; score: number; title: string; preview: string }>; stats?: unknown; error?: string }> {
+  try {
+    const results = vectorEngine.search(params.query, {
+      topK: params.topK || 10,
+      repoTypes: params.repoTypes,
+      filterTags: params.filterTags,
+    });
+
+    return {
+      success: true,
+      results: results.map(r => ({
+        id: r.document.id,
+        score: Math.round(r.score * 100) / 100,
+        title: r.document.title,
+        preview: r.document.content?.substring(0, 200) || '',
+      })),
+      stats: vectorEngine.getStats(),
+    };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+// 工具函数：记忆融合去重
+export async function fuseMemory(params: {
+  docIds: string[];
+}): Promise<{ success: boolean; merged?: { title: string; content: string; factCount: number; mergedFrom: string[] }; error?: string }> {
+  try {
+    const docs: MemoryDocument[] = [];
+    for (const docId of params.docIds) {
+      const results = await indexEngine.searchMemory({ text: docId, limit: 1 });
+      if (results.length > 0) docs.push(results[0].document);
+    }
+
+    if (docs.length < 2) return { success: false, error: 'Need at least 2 documents to fuse' };
+
+    const result = fusionEngine.fusionPair(docs[0], docs[1]);
+
+    return {
+      success: true,
+      merged: {
+        title: result.mergedDocument.title || 'Fused',
+        content: result.mergedDocument.content || '',
+        factCount: result.facts.length,
+        mergedFrom: result.mergedFrom,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
+// 工具函数：记忆质量评估
+export async function assessMemoryQuality(params: {
+  docId?: string;
+}): Promise<{ success: boolean; report?: { title: string; score: number; completeness: number; freshness: number; consistency: number; confidenceBalance: number; issues: Array<{ type: string; severity: string; description: string }>; recommendations: string[] }; error?: string }> {
+  try {
+    // Batch assess all indexed docs
+    if (!params.docId) {
+      const results = await indexEngine.searchMemory({ text: '', limit: 100 });
+      metacognitionEngine.assessBatch(results.map(r => r.document));
+      const stats = metacognitionEngine.getStats();
+      return {
+        success: true,
+        report: {
+          title: 'Global Memory Quality Assessment',
+          score: stats.averageScore,
+          completeness: 0,
+          freshness: 0,
+          consistency: 0,
+          confidenceBalance: 0,
+          issues: stats.topIssues.map(i => ({ type: i.type, severity: 'medium' as const, description: `${i.count} documents affected` })),
+          recommendations: ['Review top issues above'],
+        },
+      };
+    }
+
+    // Single doc assessment
+    const results = await indexEngine.searchMemory({ text: params.docId, limit: 1 });
+    if (results.length === 0) return { success: false, error: 'Document not found' };
+
+    const report = metacognitionEngine.assess(results[0].document);
+
+    return {
+      success: true,
+      report: {
+        title: report.title,
+        score: report.scores.overall,
+        completeness: report.scores.completeness,
+        freshness: report.scores.freshness,
+        consistency: report.scores.consistency,
+        confidenceBalance: report.scores.confidenceBalance,
+        issues: report.issues.map(i => ({ type: i.type, severity: i.severity, description: i.description })),
+        recommendations: report.recommendations,
+      },
+    };
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
 // 辅助函数
 function getRepoPath(repo: RepoType): string {
   const basePath = process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
@@ -251,6 +510,13 @@ export function registerOpenClawMemoryPlugin(api: {
   api.registerTool('memory_search', searchMemory as (...args: unknown[]) => unknown);
   api.registerTool('memory_sync', syncMemory as (...args: unknown[]) => unknown);
   api.registerTool('memory_status', getMemoryStatus as (...args: unknown[]) => unknown);
+  api.registerTool('memory_annotate', annotateMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_route', routeQuery as (...args: unknown[]) => unknown);
+  api.registerTool('memory_collaborate', collaborateMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_residuals', getResidualStatus as (...args: unknown[]) => unknown);
+  api.registerTool('memory_vector_search', vectorSearch as (...args: unknown[]) => unknown);
+  api.registerTool('memory_fuse', fuseMemory as (...args: unknown[]) => unknown);
+  api.registerTool('memory_assess', assessMemoryQuality as (...args: unknown[]) => unknown);
   
   // 注册技能
   api.registerSkill({

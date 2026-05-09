@@ -432,11 +432,11 @@ git status
 
 ## 未来规划
 
-- [ ] `time-travel` - 可视化时间线工具
-- [ ] `time-compare` - 多版本对比工具
-- [ ] `time-alert` - 变更提醒（Webhook）
-- [ ] `time-backup` - 自动备份到多个仓库
-- [ ] `time-insight` - 记忆演变分析报告
+- [x] `time-travel` - 可视化时间线工具
+- [x] `time-compare` - 多版本对比工具
+- [x] `time-alert` - 变更提醒（Webhook）
+- [x] `time-backup` - 自动备份到多个仓库
+- [x] `time-insight` - 记忆演变分析报告
 
 ---
 

@@ -11,7 +11,14 @@
     "memory_load",
     "memory_search",
     "memory_sync",
-    "memory_status"
+    "memory_status",
+    "memory_annotate",
+    "memory_route",
+    "memory_collaborate",
+    "memory_residuals",
+    "memory_vector_search",
+    "memory_fuse",
+    "memory_assess"
   ],
   "configSchema": {
     "type": "object",

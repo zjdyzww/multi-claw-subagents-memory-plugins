@@ -4,9 +4,28 @@
 
 import simpleGit, { SimpleGit, DefaultLogFields } from 'simple-git';
 import { EventEmitter } from 'eventemitter3';
-import { SyncResult, Conflict, RepoConfig, GitOptions } from './types.js';
+import { SyncResult, Conflict, RepoConfig, GitOptions, MemoryType, ConfidenceLevel } from './types.js';
 import * as fs from 'fs';
 import * as path from 'path';
+
+// Agent author mapping
+const AGENT_AUTHORS: Record<string, string> = {
+  'openclaw': 'OpenClaw Agent <openclaw@memory.system>',
+  'hermes': 'Hermes Agent <hermes@memory.system>',
+  'claude-code': 'Claude Code Agent <claude-code@memory.system>',
+  'opencode': 'OpenCode Agent <opencode@memory.system>',
+  'default': 'Multi-Claw Memory System <multi-claw@memory.system>',
+};
+
+export interface CommitContext {
+  confidence?: ConfidenceLevel;
+  source?: string;
+  memoryType?: MemoryType;
+  traceabilityId?: string;
+  agentId?: string;
+  agentType?: string;
+  factCount?: number;
+}
 
 export class GitSyncManager extends EventEmitter {
   private repos: Map<string, RepoConfig> = new Map();
@@ -149,10 +168,14 @@ export class GitSyncManager extends EventEmitter {
       // 检查是否有需要提交的内容
       const updatedStatus = await git.status();
       if (updatedStatus.files.length > 0) {
-        const message = options.message || `Sync memory: ${new Date().toISOString()}`;
-        await git.commit(message, undefined, {
-          '--author': options.author ? `${options.author} <${options.email || 'multi-claw@memory.system'}>` : undefined
-        } as Record<string, string>);
+        const message = buildStructuredMessage(
+          options.message || `Sync memory: ${new Date().toISOString()}`,
+          {
+            author: options.author,
+            email: options.email,
+          }
+        );
+        await git.commit(message);
         result.pushed = 1;
       }
 
@@ -176,9 +199,15 @@ export class GitSyncManager extends EventEmitter {
   }
 
   /**
-   * 提交记忆变更
+   * 提交记忆变更（v11：带结构化上下文）
    */
-  async commitMemory(repoType: string, message: string, files: string[], options: GitOptions = {}): Promise<void> {
+  async commitMemory(
+    repoType: string,
+    message: string,
+    files: string[],
+    options: GitOptions = {},
+    context?: CommitContext
+  ): Promise<string> {
     const git = this.gits.get(repoType);
     if (!git) {
       throw new Error(`Repository ${repoType} not found`);
@@ -189,10 +218,16 @@ export class GitSyncManager extends EventEmitter {
       await git.add(file);
     }
 
-    // 提交
-    await git.commit(message, undefined, {
-      '--author': options.author ? `${options.author} <${options.email || 'multi-claw@memory.system'}>` : undefined
-    } as Record<string, string>);
+    // 构建结构化提交消息
+    const structuredMessage = buildStructuredMessageWithContext(message, context, {
+      author: options.author,
+      email: options.email,
+    });
+
+    const result = await git.commit(structuredMessage);
+    const commitSha = result.commit || '';
+    this.emit('traceabilityCommit', { repoType, message, context, commitSha });
+    return commitSha;
   }
 
   /**
@@ -262,6 +297,94 @@ export class GitSyncManager extends EventEmitter {
   getRegisteredRepos(): RepoConfig[] {
     return Array.from(this.repos.values());
   }
+}
+
+// ============================================================
+// v11：结构化 Commit 消息构建
+// ============================================================
+
+/**
+ * 构建结构化 commit 消息
+ * 格式：`[confidence][source][memoryType] summary`
+ */
+export function buildStructuredMessage(
+  summary: string,
+  options?: { author?: string; email?: string }
+): string {
+  const authorLine = options?.author
+    ? `Author: ${options.author} <${options.email || 'noreply@memory.system'}>`
+    : 'Author: Multi-Claw Memory System <multi-claw@memory.system>';
+
+  return `${summary}\n\n${authorLine}`;
+}
+
+/**
+ * 构建完整结构化 commit 消息（含上下文元数据）
+ * 格式：
+ *   [CONFIRMED][openclaw][fact] summary
+ *   
+ *   traceabilityId: xxx-xxx
+ *   Agent: openclaw-agent
+ *   Facts: 5
+ *   Author: OpenClaw Agent <openclaw@memory.system>
+ */
+export function buildStructuredMessageWithContext(
+  message: string,
+  context?: CommitContext,
+  options?: { author?: string; email?: string }
+): string {
+  const parts: string[] = [];
+
+  // Prefix: [confidence][source][memoryType]
+  const prefixParts: string[] = [];
+  if (context?.confidence) {
+    prefixParts.push(`[${context.confidence}]`);
+  }
+  if (context?.source) {
+    prefixParts.push(`[${context.source}]`);
+  }
+  if (context?.memoryType) {
+    prefixParts.push(`[${context.memoryType}]`);
+  }
+
+  const prefix = prefixParts.length > 0 ? prefixParts.join('') + ' ' : '';
+  parts.push(`${prefix}${message}`);
+
+  // Body metadata
+  const metaLines: string[] = [];
+  if (context?.traceabilityId) {
+    metaLines.push(`traceabilityId: ${context.traceabilityId}`);
+  }
+  if (context?.agentId) {
+    metaLines.push(`Agent: ${context.agentId}`);
+  }
+  if (context?.factCount && context.factCount > 0) {
+    metaLines.push(`Facts: ${context.factCount}`);
+  }
+
+  if (metaLines.length > 0) {
+    parts.push('');
+    parts.push(...metaLines);
+  }
+
+  // Author signature
+  const agentType = context?.agentType || 'default';
+  const author = AGENT_AUTHORS[agentType] || AGENT_AUTHORS['default'];
+  const fallbackAuthor = options?.author
+    ? `Author: ${options.author} <${options.email || 'noreply@memory.system'}>`
+    : undefined;
+
+  parts.push('');
+  parts.push(fallbackAuthor || `Author: ${author}`);
+
+  return parts.join('\n');
+}
+
+/**
+ * 根据代理类型获取对应的 commit 签名字符串
+ */
+export function getAgentAuthor(agentType?: string): string {
+  return AGENT_AUTHORS[agentType || 'default'] || AGENT_AUTHORS['default'];
 }
 
 // 导出单例
