@@ -1,4 +1,4 @@
-# OpenClaw 记忆宫殿规则
+﻿# OpenClaw 记忆宫殿规则
 
 > **版本**: v1.0 | **日期**: 2026-05-08  
 > **适用**: OpenClaw 智能体 (灵禾镜 CTO 角色)  
@@ -145,7 +145,7 @@ cp -r agents/openclaw/* ~/.openclaw/workspace/
 # 3. 初始化 Git 仓库
 cd ~/.openclaw/workspace
 git init
-git remote add origin https://git.osc.life/claws-memory/openclaw-memory-private.git
+git remote add origin https://git.osc.life/claws-memory/openclaw-1-memory-private.git
 
 # 4. 配置心跳任务
 openclaw cron add xz-memory-sync --every 1800000 --payload "memory.sync"

@@ -1,4 +1,4 @@
----
+﻿---
 name: memory-palace-opencode
 category: productivity
 version: v1.0
@@ -186,7 +186,7 @@ vector_index:
 ```
 claws-memory/
 ├── code-memory-shared         # 公共代码仓
-├── opencode-memory-private    # OpenCode 私有仓
+├── opencode-1-memory-private    # OpenCode 私有仓
 └── main-memory-shared         # 公共主仓
 ```
 

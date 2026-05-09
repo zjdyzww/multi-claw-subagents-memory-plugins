@@ -1,4 +1,4 @@
----
+﻿---
 name: memory-palace-openclaw
 category: productivity
 version: v1.0
@@ -164,10 +164,10 @@ claws-memory/
 ├── main-memory-shared        # 公共主仓
 ├── business-memory-shared     # 业务子仓
 ├── code-memory-shared        # 代码子仓
-├── openclaw-memory-private   # OpenClaw 私有仓
-├── hermes-memory-private     # Hermes 私有仓
-├── claude-code-memory-private # Claude Code 私有仓
-└── opencode-memory-private   # OpenCode 私有仓
+├── openclaw-1-memory-private   # OpenClaw 私有仓
+├── hermes-1-memory-private     # Hermes 私有仓
+├── claude-code-1-memory-private # Claude Code 私有仓
+└── opencode-1-memory-private   # OpenCode 私有仓
 ```
 
 ---

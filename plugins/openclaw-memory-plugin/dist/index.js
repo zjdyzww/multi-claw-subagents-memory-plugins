@@ -347,7 +347,7 @@ function getRepoPath(repo) {
         main: `${expandedPath}/main-memory-shared`,
         business: `${expandedPath}/business-memory-shared`,
         code: `${expandedPath}/code-memory-shared`,
-        private: `${expandedPath}/openclaw-memory-private`
+        private: `${expandedPath}/openclaw-1-memory-private`
     };
     return paths[repo];
 }

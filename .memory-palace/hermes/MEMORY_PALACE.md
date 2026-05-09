@@ -1,4 +1,4 @@
-# Hermes 记忆宫殿规则
+﻿# Hermes 记忆宫殿规则
 
 > **版本**: v1.0 | **日期**: 2026-05-08  
 > **适用**: Hermes 智能体 (记忆网关角色)  
@@ -171,7 +171,7 @@ cp -r skills/productivity/memory-manager/ ~/.hermes/skills/productivity/
 
 # 3. 初始化仓库
 cd ~/.hermes
-git remote add origin https://git.osc.life/claws-memory/hermes-memory-private.git
+git remote add origin https://git.osc.life/claws-memory/hermes-1-memory-private.git
 
 # 4. 配置定时任务
 # 添加 cron: 10:00, 22:00 memory.sync --repos all

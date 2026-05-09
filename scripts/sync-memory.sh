@@ -1,10 +1,10 @@
-#!/bin/bash
+﻿#!/bin/bash
 # sync-memory.sh - 同步所有记忆仓库
 
 set -e
 
 LOCAL_BASE="${HOME}/.openclaw/memory"
-REPOS=("main-memory-shared" "business-memory-shared" "code-memory-shared" "openclaw-memory-private")
+REPOS=("main-memory-shared" "business-memory-shared" "code-memory-shared" "openclaw-1-memory-private")
 
 echo "=========================================="
 echo "  Multi-Claw Memory Sync"

@@ -1,4 +1,4 @@
-# OpenClaw Memory Plugin 配置指南
+﻿# OpenClaw Memory Plugin 配置指南
 
 ## 配置方式
 
@@ -14,7 +14,7 @@
           "mainRepoUrl": "https://git.osc.life/myz/main-memory-shared.git",
           "businessRepoUrl": "https://git.osc.life/myz/business-memory-shared.git",
           "codeRepoUrl": "https://git.osc.life/myz/code-memory-shared.git",
-          "privateRepoUrl": "https://git.osc.life/myz/openclaw-memory-private.git",
+          "privateRepoUrl": "https://git.osc.life/myz/openclaw-1-memory-private.git",
           "localPath": "~/.openclaw/memory",
           "syncInterval": 300000,
           "syncStrategy": "rebase"
@@ -46,7 +46,7 @@
 export MEMORY_MAIN_REPO_URL="https://git.osc.life/myz/main-memory-shared.git"
 export MEMORY_BUSINESS_REPO_URL="https://git.osc.life/myz/business-memory-shared.git"
 export MEMORY_CODE_REPO_URL="https://git.osc.life/myz/code-memory-shared.git"
-export MEMORY_PRIVATE_REPO_URL="https://git.osc.life/myz/openclaw-memory-private.git"
+export MEMORY_PRIVATE_REPO_URL="https://git.osc.life/myz/openclaw-1-memory-private.git"
 export MEMORY_LOCAL_PATH="~/.openclaw/memory"
 ```
 
