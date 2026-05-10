@@ -1,6 +1,7 @@
-# Hermes Gateway Configuration
+# Hermes Gateway Configuration v2.0
 
-> Hermes 记忆网关配置文件
+> Hermes 记忆网关 | 基于 giteabot 定时任务 + PR 共享
+> 同步: 10:00/14:00/18:00/22:00 | Label: 自动维护 | PR: LGTM≥2 自动合并
 
 ## 基本配置
 
