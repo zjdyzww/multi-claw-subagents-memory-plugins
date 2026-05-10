@@ -161,3 +161,26 @@
 | v1.1.0 | v11.0 | Anvil |
 | v2.0.0 | v12.0 | Chronos |
 | v3.0.0 | v13.0 | Academy |
+
+---
+
+## [3.0.1] — *Local Enhancement* — 2026-05-10
+
+> 本地增强版。基于 v3.0.0 的配置优化和新功能添加。
+
+### Added
+- `time-memory.sh`: 新增 `pyramid` 命令 — 金字塔原理结构化全量提交+索引
+- `gitea-code-scanner.py`: Gitea 代码仓库扫描器，自动登记到 code-memory-shared 并按业务关联到 business-memory-shared
+
+### Changed
+- `time-memory.sh`: 完善 help 文本，添加 pyramid 命令到 case 路由
+- Cron 任务表: 新增代码仓库扫描 (每小時) 和金字塔提交 (每天 12:00)
+- `CONFIG.md`: 更新 gitea token、仓库列表和 cron 任务配置
+
+### Fixed
+- DeepSeek 模型配置: 移除不支持的 images 特性 (`toolCall,images,reasoning` → `toolCall,reasoning`)
+
+### Performance
+- 服务器端部署: 11 个仓库已注册 GitSyncManager
+- EventBus: 事件监听已配置
+- 代码仓库首次扫描: 223 个仓库发现, 209 个代码仓库已登记
