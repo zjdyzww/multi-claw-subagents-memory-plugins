@@ -1,4 +1,4 @@
-# Multi-Claw Memory Plugins 用户指南
+﻿# Multi-Claw Memory Plugins 用户指南
 
 > 版本: v1.0  
 > 日期: 2026-05-08
@@ -54,7 +54,7 @@ git submodule update --init --recursive
           "mainRepoUrl": "https://git.osc.life/myz/main-memory-shared.git",
           "businessRepoUrl": "https://git.osc.life/myz/business-memory-shared.git",
           "codeRepoUrl": "https://git.osc.life/myz/code-memory-shared.git",
-          "privateRepoUrl": "https://git.osc.life/myz/openclaw-memory-private.git",
+          "privateRepoUrl": "https://git.osc.life/myz/openclaw-1-memory-private.git",
           "localPath": "~/.openclaw/memory",
           "syncInterval": 300000
         }
@@ -90,7 +90,7 @@ openclaw gateway restart
 ├── main-memory-shared/         # 公共主仓
 ├── business-memory-shared/    # 业务子仓
 ├── code-memory-shared/        # 代码子仓
-└── openclaw-memory-private/   # OpenClaw 私有仓
+└── openclaw-1-memory-private/   # OpenClaw 私有仓
 ```
 
 ---

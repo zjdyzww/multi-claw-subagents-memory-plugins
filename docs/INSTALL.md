@@ -1,4 +1,4 @@
-# 安装指南
+﻿# 安装指南
 
 > **版本**: v4.0 | **日期**: 2026-05-08  
 > **适用**: OpenClaw, Hermes, Claude Code, OpenCode
@@ -125,7 +125,7 @@ bash install.sh --add-agent opencode:2 --gitgroup-name claws-memory --gitserver-
           "mainRepoUrl": "https://git.osc.life/claws-memory/main-memory-shared.git",
           "businessRepoUrl": "https://git.osc.life/claws-memory/business-memory-shared.git",
           "codeRepoUrl": "https://git.osc.life/claws-memory/code-memory-shared.git",
-          "privateRepoUrl": "https://git.osc.life/claws-memory/openclaw-memory-private.git",
+          "privateRepoUrl": "https://git.osc.life/claws-memory/openclaw-1-memory-private.git",
           "localPath": "~/.openclaw/memory",
           "syncInterval": 300000
         }
@@ -159,10 +159,10 @@ memory.load --repo main --path test.md
 
 | 网关 | 记忆宫殿位置 | 私有仓库 |
 |------|-------------|----------|
-| OpenClaw | `~/.openclaw/memory-palace/` | `openclaw-memory-private` |
-| Hermes | `~/.hermes/memories/` | `hermes-memory-private` |
-| Claude Code | `~/.claude/agent-memory/` | `claude-code-memory-private` |
-| OpenCode | `~/.opencode/memory/` | `opencode-memory-private` |
+| OpenClaw | `~/.openclaw/memory-palace/` | `openclaw-1-memory-private` |
+| Hermes | `~/.hermes/memories/` | `hermes-1-memory-private` |
+| Claude Code | `~/.claude/agent-memory/` | `claude-code-1-memory-private` |
+| OpenCode | `~/.opencode/memory/` | `opencode-1-memory-private` |
 
 ---
 
@@ -202,7 +202,7 @@ cp ~/.openclaw/memory-plugins/agents/opencode/SKILL.md ~/.opencode/skills/
 # OpenClaw
 cd ~/.openclaw/memory-palace
 git init
-git remote add origin https://git.osc.life/claws-memory/openclaw-memory-private.git
+git remote add origin https://git.osc.life/claws-memory/openclaw-1-memory-private.git
 
 # 其他网关类似...
 ```

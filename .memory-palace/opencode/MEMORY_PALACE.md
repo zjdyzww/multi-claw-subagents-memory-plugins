@@ -1,4 +1,4 @@
-# OpenCode 记忆宫殿规则
+﻿# OpenCode 记忆宫殿规则
 
 > **版本**: v1.0 | **日期**: 2026-05-08  
 > **适用**: OpenCode 智能体 (开源开发角色)  
@@ -131,7 +131,7 @@ memory.index --init --provider milvus
 
 # 3. 初始化 Git
 cd ~/.opencode
-git remote add origin https://git.osc.life/claws-memory/opencode-memory-private.git
+git remote add origin https://git.osc.life/claws-memory/opencode-1-memory-private.git
 
 # 4. 配置定时同步
 # 添加 cron job: 22:00 memory.sync --repos opencode

@@ -1,4 +1,4 @@
-#!/bin/bash
+﻿#!/bin/bash
 # init-repos.sh - 初始化所有记忆仓库
 
 set -e
@@ -19,9 +19,12 @@ PUBLIC_REPOS["main-memory-shared"]="${BASE_URL}/main-memory-shared.git"
 PUBLIC_REPOS["business-memory-shared"]="${BASE_URL}/business-memory-shared.git"
 PUBLIC_REPOS["code-memory-shared"]="${BASE_URL}/code-memory-shared.git"
 
-# 私有仓库（需要根据实际智能体调整）
+# 私有仓库（支持所有智能体按需初始化）
 declare -A PRIVATE_REPOS
-PRIVATE_REPOS["openclaw-memory-private"]="${BASE_URL}/openclaw-memory-private.git"
+AGENT_TYPES=("openclaw" "hermes" "claude-code" "opencode")
+for agent in "${AGENT_TYPES[@]}"; do
+  PRIVATE_REPOS["${agent}-1-memory-private"]="${BASE_URL}/${agent}-1-memory-private.git"
+done
 
 echo ""
 echo "📦 初始化公共仓库..."

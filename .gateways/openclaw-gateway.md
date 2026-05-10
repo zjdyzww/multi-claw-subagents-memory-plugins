@@ -1,6 +1,7 @@
-# OpenClaw Gateway Configuration
+# OpenClaw Gateway Configuration v2.0
 
-> OpenClaw 主网关配置文件
+> OpenClaw 主网关 | 基于 go-gitea/gitea + giteabot 生态
+> Gitea 集成: labels/PRs/milestones/webhooks/scheduled-tasks
 
 ## 基本配置
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * OpenClaw Memory Plugin
  * OpenClaw 智能体记忆管理插件
  */
@@ -461,12 +461,13 @@ export async function assessMemoryQuality(params: {
 function getRepoPath(repo: RepoType): string {
   const basePath = process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
   const expandedPath = basePath.replace(/^~/, homedir());
+  const agentName = process.env.MEMORY_AGENT_NAME || 'openclaw';
   
   const paths: Record<RepoType, string> = {
     main: `${expandedPath}/main-memory-shared`,
     business: `${expandedPath}/business-memory-shared`,
     code: `${expandedPath}/code-memory-shared`,
-    private: `${expandedPath}/openclaw-memory-private`
+    private: `${expandedPath}/${agentName}-1-memory-private`
   };
   
   return paths[repo];

@@ -1,4 +1,4 @@
----
+﻿---
 name: memory-palace-claude-code
 category: productivity
 version: v1.0
@@ -162,7 +162,7 @@ memory.save --repo code --path "auth/jwt-implementation.java" --content "..." --
 ```
 claws-memory/
 ├── code-memory-shared         # 公共代码仓
-├── claude-code-memory-private # Claude Code 私有仓
+├── claude-code-1-memory-private # Claude Code 私有仓
 └── main-memory-shared         # 公共主仓
 ```
 

@@ -1,4 +1,4 @@
-# Claude Code 记忆宫殿规则
+﻿# Claude Code 记忆宫殿规则
 
 > **版本**: v1.0 | **日期**: 2026-05-08  
 > **适用**: Claude Code 智能体 (coder 角色)  
@@ -138,7 +138,7 @@ mkdir -p ~/.claude/projects/xz-idmp/snippets
 
 # 3. 初始化 Git
 cd ~/.claude
-git remote add origin https://git.osc.life/claws-memory/claude-code-memory-private.git
+git remote add origin https://git.osc.life/claws-memory/claude-code-1-memory-private.git
 
 # 4. 设置定时同步
 # 在 cron 中添加: 22:00 memory.sync --repos claude-code

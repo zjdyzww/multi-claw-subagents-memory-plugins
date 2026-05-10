@@ -1,10 +1,21 @@
-#!/bin/bash
+﻿#!/bin/bash
 # sync-memory.sh - 同步所有记忆仓库
 
 set -e
 
 LOCAL_BASE="${HOME}/.openclaw/memory"
-REPOS=("main-memory-shared" "business-memory-shared" "code-memory-shared" "openclaw-memory-private")
+# 公共仓库 + 动态检测私有仓库 (支持所有智能体)
+SHARED_REPOS=("main-memory-shared" "business-memory-shared" "code-memory-shared")
+AGENT_TYPES=("openclaw" "hermes" "claude-code" "opencode")
+PRIVATE_REPOS=()
+for agent in "${AGENT_TYPES[@]}"; do
+  for i in $(seq 1 5); do
+    if [ -d "${LOCAL_BASE}/${agent}-${i}-memory-private/.git" ]; then
+      PRIVATE_REPOS+=("${agent}-${i}-memory-private")
+    fi
+  done
+done
+REPOS=("${SHARED_REPOS[@]}" "${PRIVATE_REPOS[@]}")
 
 echo "=========================================="
 echo "  Multi-Claw Memory Sync"
