@@ -184,3 +184,6 @@
 - 服务器端部署: 11 个仓库已注册 GitSyncManager
 - EventBus: 事件监听已配置
 - 代码仓库首次扫描: 223 个仓库发现, 209 个代码仓库已登记
+
+### Added
+- `scripts/init-server-side.mjs`: 全量记忆代理 Server 端初始化脚本 (GitSyncManager 11仓库注册 + EventBus 配置)
