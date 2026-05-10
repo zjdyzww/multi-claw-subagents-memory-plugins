@@ -939,6 +939,87 @@ cmd_time_backup() {
 # ============================================================
 # v12 新增：time-insight — 记忆演变分析报告
 # ============================================================
+# Pyramid Memory Commit - 金字塔原理结构化索引全量提交
+# ============================================================
+cmd_pyramid() {
+  local repo_name="${1:-main-memory-shared}"
+  
+  check_repo "$repo_name" || return 1
+  local repo_path=$(get_repo_path "$repo_name")
+  cd "$repo_path"
+  
+  log_step "金字塔原理结构化全量提交 + 索引更新"
+  echo ""
+  
+  # L1: 提取核心结论
+  local l1_content=""
+  if [[ -f "MEMORY.md" ]]; then
+    l1_content=$(grep -A 15 "^## ◆ L1|^#.*L1|L1.*核心" MEMORY.md 2>/dev/null | head -20 || echo "")
+  fi
+  
+  # L2: 提取业务主线
+  local l2_content=""
+  if [[ -f "MEMORY.md" ]]; then
+    l2_content=$(grep -A 10 "^## ◆ L2|^#.*L2|L2.*业务" MEMORY.md 2>/dev/null | head -15 || echo "")
+  fi
+  
+  # L3: 提取环境配置
+  local l3_content=""
+  if [[ -f "CONFIG.md" ]] || [[ -f "MEMORY.md" ]]; then
+    l3_content=$(grep -A 10 "^## ◆ L3|^#.*L3|L3.*环境|## 环境" MEMORY.md CONFIG.md 2>/dev/null | head -15 || echo "")
+  fi
+  
+  # L4: 提取文件索引
+  local l4_content=""
+  if [[ -f "INDEX.md" ]] || [[ -f "MEMORY.md" ]]; then
+    l4_content=$(grep -A 10 "^## ◆ L4|^#.*L4|L4.*索引|## 索引" MEMORY.md INDEX.md 2>/dev/null | head -15 || echo "")
+  fi
+  
+  # 构建结构化提交消息
+  local timestamp=$(date '+%Y-%m-%d %H:%M:%S')
+  local pyramid_msg="[PYRAMID][STRUCTURED] ${timestamp}
+
+## L1 核心结论 (必须记住)
+${l1_content:-- 核心结论待更新}
+
+## L2 业务主线 (按需加载)
+${l2_content:-- 业务主线待更新}
+
+## L3 环境配置 (按需加载)
+${l3_content:-- 环境配置待更新}
+
+## L4 文件索引 (引用外部)
+${l4_content:-- 索引待更新}"
+
+  # Stage 所有变更
+  git add -A
+  
+  # 检查是否有变更
+  if git diff --cached --quiet 2>/dev/null; then
+    log_warn "没有变更，跳过提交"
+    return 0
+  fi
+  
+  # 提交
+  git commit -m "$pyramid_msg"
+  
+  # 更新索引
+  if [[ -f "MEMORY_INDEX.md" ]]; then
+    echo "## 更新索引 $(date '+%Y-%m-%d %H:%M:%S')" >> MEMORY_INDEX.md
+    git add MEMORY_INDEX.md 2>/dev/null
+    git commit -m "[INDEX] 更新索引 $(date '+%Y-%m-%d')" 2>/dev/null || true
+  fi
+  
+  log_success "✅ 金字塔结构化提交完成"
+  echo ""
+  echo "  Commit: $(git rev-parse --short HEAD)"
+  echo "  L1: 核心结论 ($(echo "$l1_content" | wc -l) 行)"
+  echo "  L2: 业务主线 ($(echo "$l2_content" | wc -l) 行)"
+  echo "  L3: 环境配置 ($(echo "$l3_content" | wc -l) 行)"
+  echo "  L4: 文件索引 ($(echo "$l4_content" | wc -l) 行)"
+}
+
+
 cmd_time_insight() {
   local repo_name="${1:-main-memory-shared}"
   local days="${2:-30}"
@@ -1127,7 +1208,7 @@ main() {
   shift || true
   
   case "$command" in
-    full|inc|snap|branch|timegoto|history|diff|log|gc|sync-all|snap-all|time-travel|time-compare|time-alert|time-backup|time-insight)
+    full|inc|snap|branch|timegoto|history|diff|log|gc|sync-all|snap-all|time-travel|time-compare|time-alert|time-backup|time-insight|pyramid)
       cmd_"${command//-/_}" "$@"
       ;;
     help|--help|-h)
