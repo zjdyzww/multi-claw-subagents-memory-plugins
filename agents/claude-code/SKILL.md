@@ -1,241 +1,231 @@
 ﻿---
 name: memory-palace-claude-code
 category: productivity
-version: v1.0
-date: 2026-05-08
-trigger: 自动加载，无需手动触发
-inputs: 用户消息，对话历史上下文
-outputs: 记忆操作结果
-tags: [记忆宫殿, 双系统, 代码上下文, 任务委派]
+version: v2.0
+date: 2026-05-10
+trigger: 自动加载
+tags: [记忆宫殿, 双系统, 代码上下文, 全量代理Server, Gitea]
 ---
 
-# Claude Code 记忆宫殿技能
+# Claude Code 记忆宫殿技能 v2.0
 
-> **版本**: v1.0 | **适用**: Claude Code 智能体 (coder 角色)  
-> **核心理念**: 代码上下文记忆 + 任务执行 + 成果同步
+> **适用**: Claude Code 智能体 (coder 角色)  
+> **核心理念**: 代码上下文记忆 + 全量代理 Server 端 + 远程同步 + 跨网关广播
+
+---
+
+## 全量记忆代理: Server 端 (v2.0)
+
+Claude Code 使用全量记忆代理 **Server** 端模式:
+
+```
+System2 (海绵全量捕获)
+    ↓
+System1 (淘金精炼)
+    ↓
+FullMemory Agent Server ← 本 agent 使用
+  ├── 远程同步 (push 到 Gitea claude-code-1-memory-private)
+  ├── 跨网关广播 (通知 OpenClaw/Hermes/OpenCode)
+  ├── 结构化管理 (commit 消息 + traceabilityId)
+  └── 定时任务 (每任务完成 + 22:00 全量)
+```
+
+### Client vs Server 区别
+
+| 模式 | 职责 | 适用场景 |
+|------|------|----------|
+| **Client** | 本地文件写入 + 残差调度 | OpenClaw/OpenCode 本地实例 |
+| **Server** | 远程同步 + 跨网关广播 | Claude Code 代码代理 ← 本 agent |
+
+---
+
+## Gitea 集成 (v2.0)
+
+```
+claude-code-1-memory-private (Gitea)
+  ├── labels: confidence/confirmed, confidence/likely
+  ├── milestones: v13.0 Academy
+  └── webhooks: push → 通知 OpenClaw
+```
+
+### Label 自动映射
+
+```
+🟢 CONFIRMED → Gitea label: confidence/confirmed
+🟡 LIKELY    → Gitea label: confidence/likely
+🔴 UNCERTAIN → Gitea label: confidence/uncertain
+```
 
 ---
 
 ## 核心功能
 
-### 1. 保存代码上下文 (memory.save)
+### memory.save — 保存代码上下文 (增强)
 
-将代码片段、项目上下文保存到记忆仓库。
-
-**参数**：
-```typescript
-{
-  repo: 'code' | 'claude-code',
-  path: string,           // 文件路径
-  content: string,        // 代码或 Markdown
-  type?: 'snippet' | 'context' | 'standard',
-  language?: string,      // 代码语言
-  confidence?: 'CONFIRMED' | 'LIKELY' | 'UNCERTAIN'
-}
-```
-
-**示例**：
-```
-我: 保存这个 JWT 认证的实现
-助手:
-memory.save --repo code --path "auth/jwt-implementation.java" --content "..." --type snippet --language java
-```
-
-### 2. 加载项目上下文 (memory.load)
-
-加载之前保存的项目上下文。
-
-**参数**：
 ```typescript
 {
   repo: 'code' | 'claude-code',
   path: string,
-  scope?: 'full' | 'partial'
+  content: string,
+  type?: 'snippet' | 'context' | 'standard',
+  language?: string,
+  confidence?: 'CONFIRMED' | 'LIKELY' | 'UNCERTAIN',
+  labels?: string[],           // Gitea label 自动映射
+  broadcast?: boolean          // 是否广播到其他网关
 }
 ```
 
-### 3. 搜索代码 (memory.search)
+### memory.load — 加载项目上下文
 
-搜索已保存的代码片段和上下文。
-
-**参数**：
 ```typescript
 {
-  query: string,          // 搜索关键词
+  repo: 'code' | 'claude-code',
+  path: string,
+  scope?: 'full' | 'partial',
+  fromRemote?: boolean        // 从 Gitea 远程拉取
+}
+```
+
+### memory.search — 搜索代码 (向量增强)
+
+```typescript
+{
+  query: string,
   repos?: string[],
   type?: 'snippet' | 'context' | 'all',
   language?: string,
+  vector?: boolean,           // 向量语义搜索
   limit?: number
 }
 ```
 
-### 4. 同步代码仓库 (memory.sync)
+### memory.sync — 同步 (Server 增强)
 
-同步本地与远程代码仓库。
-
-**参数**：
 ```typescript
 {
   repos?: string[],
   direction?: 'pull' | 'push' | 'both',
-  message?: string
+  message?: string,
+  broadcast?: boolean,        // 跨网关广播
+  createPr?: boolean          // 创建 PR 到共享仓
 }
 ```
 
-### 5. 任务上下文 (memory.context)
+### memory.broadcast — 广播到其他网关 (新增)
 
-获取当前任务的完整上下文。
-
-**参数**：
 ```typescript
 {
-  taskId: string,
-  includeHistory?: boolean
+  event: 'task_complete' | 'code_commit' | 'pattern_discovered',
+  payload: { repo: string, path: string, summary: string },
+  targets: ['openclaw', 'hermes', 'opencode']
 }
 ```
 
 ---
 
-## Claude Code 特有的工作流
+## Claude Code 特有工作流 (Server 模式)
 
 ```
 接收任务 (来自 OpenClaw)
     │
     ▼
-┌─────────────────────────────┐
-│ 1. 加载项目上下文            │
-│ memory.load --repo claude-code │
-└─────────────────────────────┘
+1. 加载项目上下文 (memory.load)
     │
     ▼
-┌─────────────────────────────┐
-│ 2. 搜索相关代码              │
-│ memory.search --type snippet │
-└─────────────────────────────┘
+2. System2 全量捕获 → 需求 + 代码现状
     │
     ▼
-┌─────────────────────────────┐
-│ 3. System 2 海绵吸收         │
-│ 全量扫描需求文档             │
-└─────────────────────────────┘
+3. System1 淘金精炼 → 识别关键代码模式
     │
     ▼
-┌─────────────────────────────┐
-│ 4. System 1 淘金提炼         │
-│ 识别需要的代码片段           │
-└─────────────────────────────┘
+4. 执行任务 → 编写/修改代码
     │
     ▼
-┌─────────────────────────────┐
-│ 5. 执行任务                 │
-│ 编写/修改代码               │
-└─────────────────────────────┘
+5. 保存代码片段 (memory.save → Gitea push)
     │
     ▼
-┌─────────────────────────────┐
-│ 6. 保存代码片段              │
-│ memory.save --type snippet   │
-└─────────────────────────────┘
+6. FullMemory Server → 远程同步 + 广播
     │
     ▼
-┌─────────────────────────────┐
-│ 7. 同步仓库                 │
-│ memory.sync --repos code    │
-└─────────────────────────────┘
+7. 通知 OpenClaw: memory.broadcast → event: task_complete
+```
+
+---
+
+## 跨网关广播协议
+
+```
+Claude Code (Server)
+    │
+    ├── task_complete → OpenClaw (更新 business-memory-shared)
+    │
+    ├── code_commit   → OpenCode (更新 code-memory-shared)  
+    │
+    ├── pattern_discovered → Hermes (记录到共享仓)
+    │
+    └── confidence_update → 所有网关 (Label 更新)
 ```
 
 ---
 
 ## 记忆层级结构
 
-| 层级 | 名称 | 内容 |
-|------|------|------|
-| L1 | 核心 | 角色定位、排他规则、编码规范 |
-| L2 | 业务 | 项目上下文、技术栈、模块结构 |
-| L3 | 配置 | 开发环境、IDE 配置、CI/CD |
-| L4 | 索引 | 代码片段索引、设计模式索引 |
+| 层级 | 名称 | 内容 | Gitea Label |
+|------|------|------|-------------|
+| L1 | 核心 | 角色定位、编码规范 | confidence/confirmed |
+| L2 | 业务 | 项目上下文、技术栈 | confidence/likely |
+| L3 | 配置 | 开发环境、CI/CD | confidence/likely |
+| L4 | 索引 | 代码片段索引 | confidence/confirmed |
 
 ---
 
-## 仓库架构
+## 仓库架构 (Server 端)
 
 ```
 claws-memory/
-├── code-memory-shared         # 公共代码仓
-├── claude-code-1-memory-private # Claude Code 私有仓
-└── main-memory-shared         # 公共主仓
+├── code-memory-shared              # 🌐 公共代码仓 (PR 共享)
+├── claude-code-1-memory-private    # 🔒 私有仓 (Server push)
+└── main-memory-shared              # 🌐 公共主仓
 ```
 
 ---
 
 ## 使用示例
 
-### 保存代码片段
+### 保存代码片段 + 广播
 
 ```
-我: 这段解析 JSON 的工具类帮我保存一下
-助手:
-memory.save --repo code --path "utils/json-parser.java" --content "public class JsonUtil..." --type snippet --language java --tags "工具类,JSON"
+memory.save --repo code --path "auth/jwt-implementation.java" \
+  --content "public class JwtUtil..." --type snippet --language java \
+  --confidence CONFIRMED --labels "auth,security" --broadcast
 ```
 
-### 加载项目上下文
+### 任务完成同步 + PR
 
 ```
-我: 加载 XZ-IDMP 后端的项目上下文
-助手:
-memory.load --repo claude-code --path "context/xz-idmp-backend.md" --scope full
+memory.sync --repos code --direction push \
+  --message "[CONFIRMED][claude-code][snippet] JWT认证实现" \
+  --broadcast --createPr
 ```
 
-### 搜索代码模式
+### 跨网关广播
 
 ```
-我: 找一下之前保存的工厂模式实现
-助手:
-memory.search --query "工厂模式" --repos code --type snippet
-```
-
-### 任务完成同步
-
-```
-我: 任务完成了，同步一下
-助手:
-memory.sync --repos code --direction push --message "XZ-IDMP 用户模块完成"
+memory.broadcast --event task_complete \
+  --payload '{"task":"XZ-IDMP 用户模块", "files":15, "status":"done"}' \
+  --targets "openclaw,hermes"
 ```
 
 ---
 
-## 编码规范检查
+## 定时任务 (Server 模式)
 
-记忆宫殿自动检查：
-
-| 检查项 | 说明 |
-|--------|------|
-| 命名规范 | 类名、方法名、变量名 |
-| 注释规范 | Javadoc、关键逻辑注释 |
-| 代码组织 | 包结构、模块划分 |
-| 错误处理 | 异常捕获、日志记录 |
+| 时机 | 操作 |
+|------|------|
+| 每任务完成 | memory.sync + broadcast |
+| 每日 18:00 | Gitea Label 维护 |
+| 每日 22:00 | 全量同步 + code-memory-shared PR |
 
 ---
 
-## 与 OpenClaw 的协作
-
-### 任务接收
-
-```
-1. 接收 OpenClaw 分配的任务
-2. 加载相关上下文
-3. 执行任务
-4. 保存成果
-5. 通知 OpenClaw 完成
-```
-
-### 广播协议
-
-```
-任务完成 → OpenClaw → 更新 business-memory-shared
-代码提交 → OpenCode → 更新 code-memory-shared
-```
-
----
-
-*Claude Code 记忆宫殿技能 v1.0 | 2026-05-08*
+*Claude Code 记忆宫殿技能 v2.0 | FullMemory Agent Server | 2026-05-10*
