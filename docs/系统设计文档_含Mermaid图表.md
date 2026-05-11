@@ -1,6 +1,7 @@
 # 多智能体记忆强化框架 —— 三代理协作系统设计文档
 
-> 版本: v3.0 | 日期: 2026-05-09 | 三代理架构: System2/System1/全量 独立协作 | 实现度: 92%
+> 版本: v3.1 | 日期: 2026-05-10 | 三代理架构: System2/System1/全量 | 实现度: 92%
+> 新增: Claude Code Server 模式 · Gitea Label/PR 集成 · MCP 桥接 · 跨网关广播
 
 ---
 
@@ -28,57 +29,63 @@ mindmap
   root((三代理记忆强化框架))
     三代理协作
       System2记忆代理
-        海绵全量吸收
+        海绵全量吸收(零遗漏)
         记忆表象构建
         残差识别标记
       System1记忆代理
-        淘金式提炼
-        置信度标注
+        淘金式提炼(5-15%)
+        置信度标注🟢🟡🔴
         Layer1主动消解
       全量记忆代理
-        Gitea持久化
-        Layer2/3清理
-        跨网关广播
+        Client模式[OpenClaw/OpenCode]
+          本地写入+残差调度
+        Server模式[Claude Code]
+          远程同步+跨网关广播
     理论支柱
       Kahneman 双系统理论
-        系统1: 快思考
-        系统2: 慢思考
-      金字塔原理
-        结论先行
-        论证分层
-        事实支撑
-    核心创新
+      金字塔原理 L1-L4
+      艾宾浩斯遗忘曲线
+    核心创新(C1-C6)
       残差趋零三层清理
       自适应路由三策略
       置信度三级传播
       三地一致性协议
-      疯狂简洁原则
-    目标平台
-      OpenClaw
-      Hermes
-      Claude Code
-      OpenCode
-    存储层
-      本地 MEMORY.md
-      Gitea 远程仓库
-      System2 会话表象
+      疯狂简洁原则(25→7文件)
+      三记忆代理协作
+    高级特性(P0-P2)
+      向量语义检索(<200ms)
+      图结构建模(1000+节点)
+      遗忘曲线自适应
+      记忆融合引擎
+      睡眠计算
+      元认知验证
+    Gitea集成
+      Label自动化
+      PR共享机制
+      Milestone跟踪
+      Webhook通知
+    部署层
+      OpenClaw插件(12工具)
+      OpenCode MCP(14工具)
+      本地MEMORY.md
+      Gitea远程(7仓库)
 ```
 
 ### 1.2 核心指标
 
 ```mermaid
 quadrantChart
-    title 框架性能四象限
-    x-axis "低" --> "高"
-    y-axis "低" --> "高"
-    "检索效率": [0.92, 0.95]
-    "理论创新": [0.85, 0.95]
-    "代码实现": [0.15, 0.42]
-    "跨域关联": [0.85, 0.88]
-    "遗忘机制": [0.93, 0.05]
-    "可追溯性": [0.90, 0.25]
-    "执行效率": [0.94, 0.85]
-    "知识整合": [0.92, 0.55]
+    title 框架性能四象限 (v13.0实测)
+    x-axis "理论" --> "工程"
+    y-axis "创新" --> "实用"
+    "检索效率 <100ms": [0.92, 0.95]
+    "向量检索 <200ms": [0.85, 0.90]
+    "实现度 92%": [0.92, 0.88]
+    "测试覆盖 69/69": [0.88, 0.85]
+    "残差收敛 72%": [0.93, 0.55]
+    "代码规模 5.4K行": [0.95, 0.75]
+    "跨agent共享": [0.88, 0.82]
+    "安装零配置": [0.90, 0.95]
 ```
 
 ---
@@ -968,6 +975,90 @@ xychart-beta
     y-axis "实现度 %" 0 --> 100
     line [35, 48, 68, 78, 85, 92]
 ```
+
+---
+
+## 十一、全量代理 Client/Server 双模式 (v13)
+
+### 11.1 模式设计
+
+```mermaid
+graph TB
+    subgraph Client["Client 模式 (本地内存)"]
+        C1[OpenClaw · CTO]
+        C2[OpenCode · 开源]
+        C3[本地文件写入]
+        C4[残差队列调度]
+        C1 --> C3
+        C2 --> C3
+        C3 --> C4
+    end
+
+    subgraph Server["Server 模式 (远程中心)"]
+        S1[Claude Code · Coder]
+        S2[远程同步 push/pull]
+        S3[跨网关广播]
+        S4[Gitea Label维护]
+        S1 --> S2
+        S2 --> S3
+        S3 --> S4
+    end
+
+    C3 -.->|push| GITEA[Gitea]
+    S2 -->|push/pull| GITEA
+    S3 -->|broadcast| C1
+    S3 -->|broadcast| C2
+    S3 -->|broadcast| HERMES[Hermes]
+```
+
+### 11.2 模式对比
+
+| 维度 | Client 模式 | Server 模式 |
+|------|------------|------------|
+| 适用 | OpenClaw, OpenCode | Claude Code |
+| 写入 | 本地 MEMORY.md | 远程 Gitea push |
+| 同步 | 被动 (手动/scheduled) | 主动 (每任务完成) |
+| 广播 | 接收 | 发送 + 接收 |
+| 残差 | 本地队列管理 | 远程 Label 维护 |
+| 文件 | full-memory-agent-client.ts | full-memory-agent-server.ts |
+
+---
+
+## 十二、Gitea 集成 (v2.0 技能)
+
+### 12.1 Label 自动化
+
+```
+🟢 CONFIRMED → Gitea label: confidence/confirmed (color: 3fb950)
+🟡 LIKELY    → Gitea label: confidence/likely    (color: d29922)
+🔴 UNCERTAIN → Gitea label: confidence/uncertain  (color: f85149)
+```
+
+### 12.2 PR 共享 (giteabot LGTM 模式)
+
+```mermaid
+sequenceDiagram
+    participant A as Agent (any)
+    participant G as Gitea
+    participant B as Other Agent
+    
+    A->>A: System2→S1→FullMemory
+    A->>G: push 私有仓 + create PR → 共享仓
+    G->>B: PR notification
+    B->>G: PR review + LGTM
+    Note over G: ≥2 LGTM
+    G->>G: auto-merge PR
+    G->>B: broadcast memory.synced
+```
+
+### 12.3 定时任务
+
+| 时间 | 操作 | 模式 |
+|------|------|------|
+| 10:00 | 全量同步 | Client + Server |
+| 14:00 | 残差清理 | Client |
+| 18:00 | Label 维护 | Server |
+| 22:00 | 全量同步 + 演变分析 | Client + Server |
 
 ---
 
