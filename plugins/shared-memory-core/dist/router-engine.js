@@ -18,49 +18,53 @@ export class RouterEngine extends EventEmitter {
      */
     classifyQuery(query, context) {
         const startTime = Date.now();
-        const queryLower = query.toLowerCase();
-        // 偏好优先级最高
-        if (context?.preferSpeed) {
-            const decision = this.makeDecision(query, 'direct', '速度优先，直连最快代理', context?.availableAgents);
+        const queryLower = (query || '').toLowerCase();
+        const agents = context?.availableAgents;
+        // 空查询直接走 direct
+        if (!queryLower) {
             const decisionMs = Date.now() - startTime;
             this.recordDecision('direct', decisionMs);
-            return { ...decision, decisionId: `route-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`, timestamp: new Date().toISOString(), metadata: { decisionMs } };
+            return this.buildDecision('', 'direct', '空查询，默认直连', [agents?.[0] || 'default'], decisionMs, context);
+        }
+        // 偏好优先级最高（direct / parallel 短路线）
+        if (context?.preferSpeed) {
+            const decisionMs = Date.now() - startTime;
+            this.recordDecision('direct', decisionMs);
+            return this.buildDecision(query, 'direct', '速度优先，直连最快代理', [agents?.[0] || 'default'], decisionMs, context);
         }
         if (context?.preferAccuracy) {
-            const decision = this.makeDecision(query, 'parallel', '精度优先，多代理并行校验', context?.availableAgents);
             const decisionMs = Date.now() - startTime;
             this.recordDecision('parallel', decisionMs);
-            return { ...decision, decisionId: `route-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`, timestamp: new Date().toISOString(), metadata: { decisionMs } };
+            return this.buildDecision(query, 'parallel', '精度优先，多代理并行校验', agents?.slice(0, 3) || ['sys1', 'sys2', 'full'], decisionMs, context);
         }
         let strategy;
         let reason;
         let targetAgents = [];
-        // 精准查询 → direct
         if (this.isDirectQuery(queryLower)) {
             strategy = 'direct';
             reason = '精准单点查询，直连单个代理最高效';
-            targetAgents = [context?.availableAgents?.[0] || 'default'];
+            targetAgents = [agents?.[0] || 'default'];
         }
-        // 宽泛查询 → parallel
         else if (this.isParallelQuery(queryLower)) {
             strategy = 'parallel';
             reason = '宽泛多维度查询，并行多代理提高覆盖率';
-            targetAgents = context?.availableAgents?.slice(0, 3) || ['sys1', 'sys2', 'full'];
+            targetAgents = agents?.slice(0, 3) || ['sys1', 'sys2', 'full'];
         }
-        // 需要多步推理 → iterative
         else if (this.isIterativeQuery(queryLower)) {
             strategy = 'iterative';
             reason = '需要多步推理，迭代轮询逐步缩小范围';
-            targetAgents = context?.availableAgents?.slice(0, 2) || ['sys1', 'full'];
+            targetAgents = agents?.slice(0, 2) || ['sys1', 'full'];
         }
-        // 默认
         else {
             strategy = 'direct';
             reason = '默认直连策略';
-            targetAgents = [context?.availableAgents?.[0] || 'default'];
+            targetAgents = [agents?.[0] || 'default'];
         }
         const decisionMs = Date.now() - startTime;
         this.recordDecision(strategy, decisionMs);
+        return this.buildDecision(query, strategy, reason, targetAgents, decisionMs, context);
+    }
+    buildDecision(query, strategy, reason, targetAgents, decisionMs, context) {
         const decision = {
             decisionId: `route-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
             query,
@@ -134,21 +138,6 @@ export class RouterEngine extends EventEmitter {
     // ============================================================
     // 查询分类规则
     // ============================================================
-    /**
-     * 快速构造决策对象
-     */
-    makeDecision(query, strategy, reason, availableAgents) {
-        return {
-            decisionId: '',
-            query,
-            strategy,
-            targetAgents: strategy === 'direct'
-                ? [availableAgents?.[0] || 'default']
-                : availableAgents?.slice(0, 3) || ['sys1', 'sys2', 'full'],
-            reason,
-            timestamp: new Date().toISOString(),
-        };
-    }
     /**
      * direct 策略：精准单点查询
      */

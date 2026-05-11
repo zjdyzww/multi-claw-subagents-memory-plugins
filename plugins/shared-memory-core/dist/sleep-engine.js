@@ -180,19 +180,36 @@ export class SleepEngine extends EventEmitter {
             case 'index-optimization':
                 if (this.indexEngine) {
                     const stats = this.indexEngine.getIndexStats();
-                    this.emit('taskResult', { taskId: task.id, stats });
+                    this.indexEngine.clearIndex();
+                    this.emit('taskResult', { taskId: task.id, stats, action: 'index_cleared' });
                 }
                 break;
             case 'forgetting-scan':
                 if (this.forgettingEngine) {
+                    this.forgettingEngine.start();
                     const stats = this.forgettingEngine.getStats();
-                    this.emit('taskResult', { taskId: task.id, stats });
+                    this.forgettingEngine.stop();
+                    this.emit('taskResult', { taskId: task.id, stats, forgotten: stats.forgottenCount });
                 }
                 break;
             case 'residual-cleanup':
                 if (this.residualEngine) {
-                    const info = this.residualEngine.getResidualInfo();
-                    this.emit('taskResult', { taskId: task.id, info });
+                    const before = this.residualEngine.getStats();
+                    this.residualEngine.start();
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                    this.residualEngine.stop();
+                    const after = this.residualEngine.getStats();
+                    const cleanupEvents = [];
+                    this.residualEngine.removeAllListeners();
+                    this.residualEngine.on('residualResolved', (record) => {
+                        cleanupEvents.push({ factId: record.factId, resolutionType: record.resolutionType });
+                    });
+                    this.emit('taskResult', {
+                        taskId: task.id,
+                        before: { size: before.totalResiduals, score: before.totalScore },
+                        after: { size: after.totalResiduals, score: after.totalScore },
+                        removed: before.totalResiduals - after.totalResiduals,
+                    });
                 }
                 break;
             case 'confidence-audit':

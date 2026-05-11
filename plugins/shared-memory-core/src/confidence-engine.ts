@@ -40,6 +40,7 @@ export class ConfidenceEngine extends EventEmitter {
   private annotations: Map<string, ConfidenceMetadata> = new Map();
   private conflicts: ConflictRecord[] = [];
   private maxConflicts = 200;
+  private maxChainLength = 50;
 
   /**
    * 标注文档置信度
@@ -90,10 +91,12 @@ export class ConfidenceEngine extends EventEmitter {
       reason,
     };
 
-    // 更新或创建元数据
-    const chain = existing?.chain
-      ? [...existing.chain, chainEntry]
-      : [chainEntry];
+    // 更新或创建元数据（限制链长度，防止无限增长）
+    const existingChain = existing?.chain || [];
+    const trimmedChain = existingChain.length >= this.maxChainLength
+      ? existingChain.slice(existingChain.length - this.maxChainLength + 1)
+      : existingChain;
+    const chain = [...trimmedChain, chainEntry];
 
     const metadata: ConfidenceMetadata = {
       currentLevel: level,

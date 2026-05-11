@@ -2,8 +2,9 @@
  * OpenClaw Memory Plugin
  * OpenClaw 智能体记忆管理插件
  */
-import { gitSyncManager, indexEngine, eventBus, routerEngine, confidenceEngine, personaEngine, residualEngine, vectorEngine, fusionEngine, metacognitionEngine } from '@multi-claw/shared-memory-core';
+import { gitSyncManager, indexEngine, eventBus, routerEngine, confidenceEngine, personaEngine, residualEngine, vectorEngine, fusionEngine, metacognitionEngine, initializeCore } from '@multi-claw/shared-memory-core';
 import { homedir } from 'os';
+let pluginConfig = null;
 // 工具函数：保存记忆
 export async function saveMemory(params) {
     try {
@@ -150,7 +151,7 @@ export async function annotateMemory(params) {
             return { success: false, error: `Document ${params.docId} not found in index` };
         }
         const doc = indexed[0].document;
-        confidenceEngine.annotate(doc, params.level, params.source, params.reason || 'manual annotation', params.reason);
+        confidenceEngine.annotate(doc, params.level, params.source, 'manual annotation', params.reason);
         return { success: true };
     }
     catch (error) {
@@ -341,9 +342,9 @@ export async function assessMemoryQuality(params) {
 }
 // 辅助函数
 function getRepoPath(repo) {
-    const basePath = process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
+    const basePath = pluginConfig?.localPath || process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory';
     const expandedPath = basePath.replace(/^~/, homedir());
-    const agentName = process.env.MEMORY_AGENT_NAME || 'openclaw';
+    const agentName = pluginConfig?.agentId || process.env.MEMORY_AGENT_NAME || 'openclaw';
     const paths = {
         main: `${expandedPath}/main-memory-shared`,
         business: `${expandedPath}/business-memory-shared`,
@@ -380,6 +381,33 @@ function generateId(path) {
 }
 // 插件注册函数
 export function registerOpenClawMemoryPlugin(api) {
+    // 初始化配置：优先 env var，其次默认值
+    const agentId = process.env.MEMORY_AGENT_NAME || 'openclaw';
+    const localBasePath = (process.env.MEMORY_LOCAL_PATH || '~/.openclaw/memory').replace(/^~/, homedir());
+    pluginConfig = {
+        mainRepoUrl: process.env.MEMORY_MAIN_REPO_URL || '',
+        businessRepoUrl: process.env.MEMORY_BUSINESS_REPO_URL || '',
+        codeRepoUrl: process.env.MEMORY_CODE_REPO_URL || '',
+        privateRepoUrl: process.env.MEMORY_PRIVATE_REPO_URL || '',
+        localPath: localBasePath,
+        syncInterval: parseInt(process.env.MEMORY_SYNC_INTERVAL || '300000', 10),
+        agentId,
+        agentType: process.env.MEMORY_AGENT_TYPE || 'openclaw',
+    };
+    // 如果配置了仓库 URL，自动调用 initializeCore
+    if (pluginConfig.mainRepoUrl) {
+        initializeCore({
+            mainRepoUrl: pluginConfig.mainRepoUrl,
+            businessRepoUrl: pluginConfig.businessRepoUrl,
+            codeRepoUrl: pluginConfig.codeRepoUrl,
+            privateRepoUrl: pluginConfig.privateRepoUrl,
+            localBasePath: pluginConfig.localPath,
+            agentId: pluginConfig.agentId,
+            agentType: pluginConfig.agentType,
+        }).catch((err) => {
+            console.error('[MemoryPlugin] initializeCore failed:', err);
+        });
+    }
     // 注册工具
     api.registerTool('memory_save', saveMemory);
     api.registerTool('memory_load', loadMemory);

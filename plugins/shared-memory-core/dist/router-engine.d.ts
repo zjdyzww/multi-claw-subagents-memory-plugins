@@ -5,7 +5,7 @@
  * 集成 IndexEngine 进行查询分类与路由决策
  */
 import { EventEmitter } from 'eventemitter3';
-import type { RouteDecision, RepoType } from './types.js';
+import type { RouteDecision, RepoType, SearchResult } from './types.js';
 import { IndexEngine } from './indexer.js';
 interface RouterStats {
     totalQueries: number;
@@ -32,6 +32,7 @@ export declare class RouterEngine extends EventEmitter {
         preferSpeed?: boolean;
         preferAccuracy?: boolean;
     }): RouteDecision;
+    private buildDecision;
     /**
      * 获取路由统计
      */
@@ -48,15 +49,11 @@ export declare class RouterEngine extends EventEmitter {
         repoTypes?: RepoType[];
         tags?: string[];
         limit?: number;
-    }): Promise<import("./types.js").SearchResult[]>;
+    }): Promise<SearchResult[]>;
     /**
      * 重置统计
      */
     resetStats(): void;
-    /**
-     * 快速构造决策对象
-     */
-    private makeDecision;
     /**
      * direct 策略：精准单点查询
      */

@@ -74,7 +74,7 @@ export declare class AgentCommunicationManager {
      */
     shutdown(): void;
     /**
-     * 带重试的消息投递
+     * 带重试的消息投递（迭代实现，避免递归栈溢出）
      */
     private deliverWithRetry;
     /**

@@ -113,4 +113,25 @@ describe('ConfidenceEngine', () => {
     expect(conflicts.length).toBe(1);
     expect(conflicts[0].docId).toBe('doc1');
   });
+
+  it('should resolve conflicts manually', () => {
+    const doc = makeDoc('doc1');
+    engine.annotate(doc, 'LIKELY', 'agent1', 's1');
+    engine.annotate({ ...doc, confidence: 'LIKELY' }, 'CONFIRMED', 'agent2', 's2');
+    const conflicts = engine.getConflicts();
+    expect(conflicts.length).toBe(1);
+    const resolved = engine.resolveConflictManually(conflicts[0].id, 'replace');
+    expect(resolved).toBe(true);
+  });
+
+  it('should accumulate chain entries when same source annotates', () => {
+    const doc = makeDoc('chain-accum');
+    // Same source 'engine' — no conflict triggered
+    engine.annotate(doc, 'CONFIRMED', 'engine', 'test', 'first');
+    engine.annotate(doc, 'LIKELY', 'engine', 'test', 'second');
+    engine.annotate(doc, 'UNCERTAIN', 'engine', 'test', 'third');
+    const meta = engine.getMetadata('chain-accum');
+    expect(meta!.chain.length).toBe(3);
+    expect(meta!.chain[0].source).toBe('engine');
+  });
 });

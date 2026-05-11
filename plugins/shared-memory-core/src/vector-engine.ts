@@ -172,23 +172,41 @@ export class VectorEngine extends EventEmitter {
   // 生产环境应替换为真正的 embedding 模型
   // ============================================================
 
+  private hashFNV1a(str: string): number {
+    let hash = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    return Math.abs(hash);
+  }
+
   private generateEmbedding(text: string): number[] {
     const embedding = new Array(this.dimension).fill(0);
 
     if (!text || text.length === 0) return embedding;
 
-    // 字符级别 n-gram hashing → 向量
-    const chars = text.toLowerCase().split('');
+    // 使用 FNV-1a hash 将 n-gram 分散到高维空间
+    const cleaned = text.toLowerCase().replace(/\s+/g, ' ');
+    const chars = cleaned.split('');
+
     for (let i = 0; i < chars.length; i++) {
-      const code = chars[i].charCodeAt(0);
-      const idx = code % this.dimension;
-      embedding[idx] += 1;
+      // 单字符 hash
+      const unigramIdx = this.hashFNV1a(chars[i]) % this.dimension;
+      embedding[unigramIdx] += 1;
 
       // Bigram
       if (i < chars.length - 1) {
-        const bigramCode = (chars[i] + chars[i + 1]).split('').reduce((a, c) => a * 31 + c.charCodeAt(0), 0);
-        const bigramIdx = Math.abs(bigramCode % this.dimension);
+        const bigramKey = chars[i] + chars[i + 1];
+        const bigramIdx = this.hashFNV1a(bigramKey) % this.dimension;
         embedding[bigramIdx] += 0.5;
+      }
+
+      // Trigram (增加上下文敏感度)
+      if (i < chars.length - 2) {
+        const trigramKey = chars[i] + chars[i + 1] + chars[i + 2];
+        const trigramIdx = this.hashFNV1a(trigramKey) % this.dimension;
+        embedding[trigramIdx] += 0.25;
       }
     }
 

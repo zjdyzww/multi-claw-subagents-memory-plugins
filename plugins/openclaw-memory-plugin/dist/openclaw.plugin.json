@@ -24,29 +24,36 @@
     "type": "object",
     "additionalProperties": true,
     "properties": {
-      "mainRepoUrl": {
+      "MEMORY_MAIN_REPO_URL": {
         "type": "string",
         "description": "URL of the main memory repository"
       },
-      "businessRepoUrl": {
+      "MEMORY_BUSINESS_REPO_URL": {
         "type": "string",
         "description": "URL of the business memory repository"
       },
-      "codeRepoUrl": {
+      "MEMORY_CODE_REPO_URL": {
         "type": "string",
         "description": "URL of the code memory repository"
       },
-      "privateRepoUrl": {
+      "MEMORY_PRIVATE_REPO_URL": {
         "type": "string",
         "description": "URL of the private memory repository"
       },
-      "localPath": {
+      "MEMORY_LOCAL_PATH": {
         "type": "string",
-        "description": "Local path for memory storage"
+        "description": "Local path for memory storage (env var)",
+        "default": "~/.openclaw/memory"
       },
-      "syncInterval": {
-        "type": "number",
-        "description": "Sync interval in milliseconds"
+      "MEMORY_AGENT_NAME": {
+        "type": "string",
+        "description": "Agent identifier for private repo naming",
+        "default": "openclaw"
+      },
+      "MEMORY_SYNC_INTERVAL": {
+        "type": "string",
+        "description": "Sync interval in ms (env var)",
+        "default": "300000"
       }
     }
   }

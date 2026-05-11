@@ -1,9 +1,8 @@
-# Memory System Design — 三代理协作记忆系统设计 v5
+# Memory System Design — 三代理协作记忆系统设计 v6
 
-> 架构原理 · 设计决策 · 理论基础
-> 核心升级：v5.1 全量记忆代理 Server+Client 双层架构——Server 端远程同步与广播，Client 端本地文件管理与残差调度
-> P0: 分段检索 + 情节存储
-> P1: 自适应路由策略 + 置信度传播机制
+> 架构原理 · 设计决策 · 理论基础 · 引擎全景
+> 核心升级：v6 新增 10 个独立引擎 + 三代理通信协议 + MCP 桥接
+> 引擎矩阵：14 引擎 | 3 代理 | 21 TypeScript 源文件 | 140+ 测试
 
 ---
 
@@ -16,7 +15,7 @@
 3. **残差累积**: 不确定性残差持续累积导致记忆质量下降
 4. **置信度缺失**: 事实来源和可信度不可追溯
 
-**解决方案**: 自适应路由检索 → System 2 海绵全量吸收 → Layer 1 主动消解 → System 1 淘金提炼 → 置信度传播 → 残差趋零清理 → Gitea 一致性同步
+**解决方案**: 自适应路由检索 → System 2 海绵全量吸收 → Layer 1 主动消解 → System 1 淘金提炼 → 置信度传播 → 残差趋零清理 → 元认知评估 → Gitea 一致性同步
 
 ---
 
@@ -44,74 +43,86 @@ L4 文件索引     → 引用外部文件
 
 | 研究 | 核心贡献 | 当前框架对照 |
 |------|---------|-------------|
-| MemORAI | Query-Adaptive PageRank 检索 | 自适应路由策略 (P1) |
-| MemMachine | Ground-truth 情节保留 | Git 全量快照 + 增量 diff (time-memory.sh) |
-| SPARK | 多智能体 Persona 协调 | 业务域识别 (P1) |
-| 残差趋零（首创） | 三层清理机制 | Layer 1/2/3 主动净化 |
+| MemORAI | Query-Adaptive PageRank 检索 | 自适应路由策略 (RouterEngine) |
+| MemMachine | Ground-truth 情节保留 | Git 全量快照 + 增量 diff (GitSyncManager) |
+| SPARK | 多智能体 Persona 协调 | 4 专家协作评估 (PersonaEngine) |
+| 艾宾浩斯遗忘曲线 | 记忆衰减 R = e^(-t/S) | 遗忘曲线扫描 (ForgettingEngine) |
+| 残差趋零（首创） | 三层清理机制 | ResidualEngine L1/L2/L3 主动净化 |
 
 ---
 
-## 3. 架构设计 v4
+## 3. 引擎全景（14引擎 + 3代理）
 
-### 3.1 完整架构
+### 3.1 核心引擎表
+
+| 引擎 | 文件名 | 行数 | 核心功能 |
+|------|--------|------|---------|
+| **ResidualEngine** | `residual-engine.ts` | 354 | 残差趋零三层清理 R = Σ(size × weight) |
+| **RouterEngine** | `router-engine.ts` | 280 | 自适应三策略路由 direct/parallel/iterative |
+| **ConfidenceEngine** | `confidence-engine.ts` | 290 | 三级置信度 + 三态冲突处理 CASE 1/2/3 |
+| **PersonaEngine** | `persona-engine.ts` | 405 | 4 专家协作评估 + 投票流水线 |
+| **VectorEngine** | `vector-engine.ts` | 235 | 128-dim FNV-1a hash + trigram 向量检索 |
+| **FusionEngine** | `fusion-engine.ts` | 278 | Jaccard 相似度融合去重 |
+| **GraphEngine** | `graph-engine.ts` | 307 | BFS/DFS 记忆图遍历 |
+| **ForgettingEngine** | `forgetting-engine.ts` | 218 | 艾宾浩斯遗忘曲线 R = e^(-t/S) |
+| **MetacognitionEngine** | `metacognition-engine.ts` | 219 | 4 维记忆质量评分 |
+| **SleepEngine** | `sleep-engine.ts` | 275 | 空闲后台 5 任务自动整理 |
+| **GitSyncManager** | `git-sync.ts` | 450 | 结构化 commit + 定时同步 |
+| **IndexEngine** | `indexer.ts` | 330 | 全文搜索 + LRU 文档缓存 |
+| **EventBus** | `event-bus.ts` | 254 | 发布/订阅事件总线 |
+| **AccessControl** | `access-control.ts` | 278 | 4 级权限管理 |
+
+### 3.2 三代理架构
+
+| 代理 | 角色 | 行数 | 职责 |
+|------|------|------|------|
+| **System2Agent** | 海绵式全量捕获 | 131 | 零遗漏原则，每段落独立事实 |
+| **System1Agent** | 淘金式精炼 | 202 | 7 条标准筛选，淘金率 5-15% |
+| **FullMemoryAgentClient** | 本地持久化 | 190 | MEMORY.md 追加写入，残差委托集中管理 |
+| **FullMemoryAgentServer** | 远程同步+广播 | 196 | Gitea 推送，跨网关广播 |
+
+### 3.3 通信拓扑
+
+```
+System2 ──handoff──→ System1 ──handoff──→ FullClient ──sync──→ FullServer
+                      ↑<──query────                             <──broadcast──
+```
+
+通信管道: AgentCommunicationManager (303 行) — 心跳保活 / 重试投递 / 队列保护
+
+### 3.4 完整数据流
 
 ```
 USER QUERY
     ↓
-自适应路由策略 (direct/parallel/iterative)
+RouterEngine (direct/parallel/iterative)
     ↓
-分段记忆加载 (L1-L4 按需)
+System2Agent (海绵式全量捕获)
     ↓
-System 2: 海绵式吸收 (检索结果 + 新对话全量)
+ResidualEngine.enqueue() (UNCERTAIN 事实入残差队列)
     ↓
-Layer 1: 主动消解 (本轮残差立即处理)
+System1Agent (淘金式筛选 + 置信度标注)
     ↓
-未消解残差 → 残差队列
+ConfidenceEngine (三态冲突 CASE 1/2/3)
     ↓
-System 1: 淘金式提炼 (置信度感知 + 相关性过滤)
+FullMemoryAgentClient (本地 MEMORY.md 追加)
     ↓
-置信度传播更新
+FullMemoryAgentServer (Gitea sync + 广播)
     ↓
-分段记忆写入 (带置信度元数据)
+MetacognitionEngine (4 维质量评分)
     ↓
-残差队列 Layer 2/3 清理
-    ↓
-Gitea 同步 (10:00/22:00 + 重大变更)
+SleepEngine (空闲时: 残差清理/遗忘扫描/索引优化/置信度审计)
 ```
-
-### 3.2 自适应路由策略
-
-| 策略 | 触发条件 | 加载范围 | 响应时间 |
-|------|---------|---------|---------|
-| direct | 简单事实查询（<30字） | L1_CORE | < 100ms |
-| parallel | 多跳/关系问题 | L1 + 多L2 | < 500ms |
-| iterative | 模糊/探索性 | 全量 L1-L4 | < 2s |
-
-### 3.3 置信度等级
-
-| 等级 | 标识 | 定义 | 写入位置 |
-|------|------|------|---------|
-| 高 | 🟢 | 用户明确表达/多次验证一致 | L1/L2 |
-| 中 | 🟡 | 单次获取/推断得出 | L2/L3 |
-| 低 | 🔴 | 模糊表达/单一信号 | L3或丢弃 |
 
 ---
 
-## 4. 残差趋零清理机制
+## 4. 质量保障
 
-### 4.1 三层清理
-
-| Layer | 时机 | 动作 |
-|-------|------|------|
-| Layer 1 | 每轮对话结束 | 主动消解，标记溯源 |
-| Layer 2 | 下轮对话触发 | 相关残差被解决则写入 |
-| Layer 3 | 每日 10:00/22:00 | 24h降级/7d归档/30d删除 |
-
-### 4.2 质量指标
-
-- 残差队列长度 ≤ 10
-- 平均残差驻留时间 ≤ 48h
-- 残差消解率 ≥ 70%（72h内）
+- **测试**: 145 测试 · 12 文件 · 0 失败（unit/integration/e2e/benchmark）
+- **构建**: TypeScript strict · ES2022 · 双插件编译零错误
+- **类型安全**: 所有引擎 export class + singleton + factory function
+- **双插件结构**: `shared-memory-core`(21 源文件) → `openclaw-memory-plugin`(12 tools)
+- **MCP 桥接**: 14 引擎全部暴露为 MCP stdio 工具
 
 ---
 
@@ -123,7 +134,10 @@ Gitea 同步 (10:00/22:00 + 重大变更)
 | v2 | 2026-05-07 | 海绵式+淘金式+三地一致性 |
 | v3 | 2026-05-07 | 残差趋零清理+分段检索 |
 | v4 | 2026-05-07 | 自适应路由策略+置信度传播机制 |
+| v5 | 2026-05-11 | 10 引擎完整实现 + 设计文档补齐 |
+| v6 | 2026-05-11 | 全优化: 145 测试/链截断/路径可配/残差统一/双份构建 |
 
 ---
 
-*设计文档版本: v4 | 2026-05-07*
+*设计文档版本: v6 | 2026-05-11*
+

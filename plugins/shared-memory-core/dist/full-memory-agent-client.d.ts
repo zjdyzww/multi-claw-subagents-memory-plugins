@@ -13,27 +13,25 @@ export declare class FullMemoryAgentClient extends EventEmitter implements Agent
     private currentInput;
     private currentResult;
     private localMemoryPath;
-    private residualQueue;
     constructor(agentId: string, agentType: string, localMemoryPath: string);
     getStatus(): AgentStatus;
     startProcessing(input: MemoryRepresentation): Promise<void>;
     getResult(): Promise<MemoryRepresentation>;
     shutdown(): Promise<void>;
     /**
-     * 获取残差队列
+     * 获取残差队列（委托到中央 ResidualEngine）
      */
     getResidualQueue(): FactPoint[];
     /**
-     * 清除残差队列
+     * 清除残差队列（委托到中央 ResidualEngine）
      */
     clearResidualQueue(): void;
     /**
-     * 从残差队列移除已解决的事实
+     * 从残差队列移除已解决的事实（委托到中央 ResidualEngine）
      */
     resolveResidual(factId: string): void;
     private buildMemoryMarkdown;
-    private manageResidualQueue;
-    private calculateResidualInfo;
+    private delegateResiduals;
 }
 export declare function createFullMemoryAgentClient(agentId: string, agentType: string, localMemoryPath: string): FullMemoryAgentClient;
 //# sourceMappingURL=full-memory-agent-client.d.ts.map
