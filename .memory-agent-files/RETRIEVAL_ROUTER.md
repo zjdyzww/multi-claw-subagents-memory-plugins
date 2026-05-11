@@ -1,15 +1,20 @@
 # RouterEngine — 自适应三策略路由引擎
 
-> 引擎实现: `shared-memory-core/src/router-engine.ts` · 279 行 · 事件驱动
+> 引擎实现: `shared-memory-core/src/router-engine.ts` · 280 行 · 事件驱动
 > 设计依据: MEMORY_SYSTEM.md §3.2 自适应路由策略
 
 ## 路由策略
 
 ```
 classifyQuery(query)
-    ├── direct     精准单点查询       → L1_CORE      < 100ms
-    ├── parallel   多跳/关系问题      → L1 + 多L2    < 500ms
-    └── iterative  模糊/探索性        → 全量 L1-L4   < 2s
+    ├─ 空查询?         ──→ direct (短路)
+    ├─ preferSpeed?    ──→ direct (短路)
+    ├─ preferAccuracy? ──→ parallel (短路)
+    │
+    ├─ isDirectQuery()   ──→ direct      精准单点       < 100ms
+    ├─ isParallelQuery() ──→ parallel    多跳/关系      < 500ms
+    ├─ isIterativeQuery()──→ iterative   模糊/探索      < 2s
+    └─ default           ──→ direct
 ```
 
 ## 查询分类规则
@@ -54,6 +59,7 @@ classifyQuery(query)
 ```
 query + context
     │
+    ├─ !query?          ──→ direct (空查询保护)
     ├─ preferSpeed?     ──→ direct
     ├─ preferAccuracy?  ──→ parallel
     │
@@ -63,19 +69,20 @@ query + context
     └─ default           ──→ direct
     │
     ▼
+buildDecision(query, strategy, reason, targetAgents, decisionMs, context)
+    │
+    ▼
 RouteDecision {
-    strategy,
-    targetAgents[],
-    reason,
-    timestamp,
-    metadata: { decisionMs }
+    decisionId, query, strategy, targetAgents[],
+    reason, timestamp,
+    metadata: { decisionMs, context? }
 }
 ```
 
 ## 与 IndexEngine 集成
 
 ```typescript
-executeQuery(decision, indexEngine, params)
+executeQuery(decision, indexEngine, params): Promise<SearchResult[]>
 ```
 
 - direct: limit=10, 单仓库
@@ -99,12 +106,23 @@ executeQuery(decision, indexEngine, params)
 | `executionStart` | executeQuery 开始 |
 | `executionComplete` | executeQuery 结束 |
 
+## 边界条件
+
+| 输入 | 行为 |
+|------|------|
+| 空查询 `''` | 短路 direct，reason 含"空查询" |
+| `undefined` | 安全 fallback 到 `''` → direct |
+| unknown query | 默认 fallback direct |
+| preferSpeed + preferAccuracy 同时为 true | preferSpeed 优先（先检查） |
+
 ## 工程质量
 
 - 正则模式匹配：三层隔离测试覆盖
-- 边界条件处理：空查询 → direct；未知查询 → default direct
-- 偏好优先：context.preferSpeed/preferAccuracy 覆盖所有分类逻辑
+- 短路优先：空查询→preferSpeed→preferAccuracy→规则匹配→default
+- `buildDecision` 统一出口，消除死代码 `makeDecision`
+- `executeQuery` 返回值严格类型 `Promise<SearchResult[]>`（非 `any`）
 - 统计持久化：保留最多 100 条历史决策
+- `resetStats()` 全量清理
 
 ## 版本历史
 
@@ -112,7 +130,9 @@ executeQuery(decision, indexEngine, params)
 |------|------|------|
 | v1 | 2026-05-07 | 初始三策略设计 |
 | v2 | 2026-05-11 | RouterEngine 完整实现，IndexEngine 集成 |
+| v3 | 2026-05-11 | 空查询保护 · `buildDecision` 统一入口 · 类型强化 |
 
 ---
 
-*引擎版本: v2 | 实现: router-engine.ts · 279 lines*
+*引擎版本: v3 | 实现: router-engine.ts · 280 lines*
+

@@ -82,11 +82,35 @@ serialize(): string  // 队列 → JSON
 deserialize(json: string): void  // JSON → 队列
 ```
 
+## 依赖关系
+
+```
+FullMemoryAgentClient ──delegate──→ ResidualEngine (中央单例)
+    manageResidualQueue()             getQueue()
+    getResidualQueue()                enqueue(fact)
+    resolveResidual(factId)           resolve(factId, 'active'|'forced')
+    clearResidualQueue()              遍历 resolveAll('forced')
+```
+
+ResidualEngine 是**中央单例**，所有 FullMemoryAgentClient 实例统一委托到此引擎。解决了残差队列双份追踪问题。
+
+## SleepEngine 集成
+
+SleepEngine 在空闲时自动触发残差清理：
+
+| 字段 | 值 |
+|------|-----|
+| 调度 | hourly (每 1h) |
+| 动作 | `residualEngine.start()` → 等待 → `residualEngine.stop()` |
+| 报告 | `{ before: {size, score}, after: {size, score}, removed }` |
+
 ## 工程质量
 
 - 单元测试覆盖: 入队/消解/三层清理/序列化/边界条件
 - 集成事件: 通过 EventEmitter 与 SleepEngine 联动
+- 委托统一: FullMemoryAgentClient → ResidualEngine 单例，杜绝双份队列
 - 空状态: 空队列时 `calculateResidualScore()` 返回 0，`periodicCheck()` 无操作
+- 序列化: `serialize()` / `deserialize()` 支持状态持久化
 
 ## 版本历史
 
@@ -94,7 +118,9 @@ deserialize(json: string): void  // JSON → 队列
 |------|------|------|
 | v1 | 2026-05-07 | 初始三层清理规则 |
 | v2 | 2026-05-11 | ResidualEngine 完整实现，事件驱动架构 |
+| v3 | 2026-05-11 | FullMemoryAgentClient 统一委托，消除双份队列 |
 
 ---
 
-*引擎版本: v2 | 实现: residual-engine.ts · 354 lines*
+*引擎版本: v3 | 实现: residual-engine.ts · 354 lines | 委托客户端: full-memory-agent-client.ts*
+
