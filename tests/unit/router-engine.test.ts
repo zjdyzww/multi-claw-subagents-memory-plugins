@@ -83,4 +83,23 @@ describe('RouterEngine', () => {
     expect(decision.timestamp).toBeDefined();
     expect(decision.targetAgents.length).toBeGreaterThan(0);
   });
+
+  it('should handle empty query as direct', () => {
+    const decision = engine.classifyQuery('');
+    expect(decision.strategy).toBe('direct');
+    expect(decision.reason).toContain('空查询');
+  });
+
+  it('should handle null/undefined query as direct', () => {
+    const decision = engine.classifyQuery(undefined as any);
+    expect(decision.strategy).toBe('direct');
+  });
+
+  it('should reset stats', () => {
+    engine.classifyQuery('id:test');
+    engine.classifyQuery('分析全部');
+    engine.resetStats();
+    const stats = engine.getStats();
+    expect(stats.totalQueries).toBe(0);
+  });
 });

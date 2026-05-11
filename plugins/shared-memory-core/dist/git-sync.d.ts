@@ -16,7 +16,8 @@ export interface CommitContext {
 export declare class GitSyncManager extends EventEmitter {
     private repos;
     private gits;
-    private syncTimers;
+    private syncTimeouts;
+    private syncIntervals;
     private scheduledSyncTimes;
     constructor();
     /**

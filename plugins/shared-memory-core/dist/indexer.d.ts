@@ -6,11 +6,13 @@ import { MemoryDocument, SearchQuery, SearchResult, RepoType } from './types.js'
 export declare class IndexEngine extends EventEmitter {
     private indexes;
     private searchIndex;
+    private documentCache;
     private lastSearchMs;
     private searchCount;
     private totalSearchMs;
     private queryCache;
     private readonly MAX_CACHE_SIZE;
+    private readonly MAX_DOC_CACHE;
     constructor();
     /**
      * 从文件路径解析记忆文档

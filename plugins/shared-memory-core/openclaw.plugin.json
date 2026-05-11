@@ -2,7 +2,7 @@
   "id": "shared-memory-core",
   "enabledByDefault": false,
   "name": "Shared Memory Core",
-  "description": "Shared memory core library for multi-agent memory plugins. Provides git sync, indexing, access control, event bus, three-agent system (System2/System1/FullMemory), and agent communication.",
+  "description": "Shared memory core library for multi-agent memory plugins. Provides git sync, indexing, access control, event bus, three-agent system (System2/System1/FullMemory), agent communication, and 10 memory engines (residual/router/confidence/persona/vector/fusion/graph/forgetting/metacognition/sleep).",
   "libraries": [
     "./access-control.js",
     "./event-bus.js",
@@ -13,7 +13,17 @@
     "./system1-agent.js",
     "./full-memory-agent-client.js",
     "./full-memory-agent-server.js",
-    "./agent-communication.js"
+    "./agent-communication.js",
+    "./residual-engine.js",
+    "./router-engine.js",
+    "./confidence-engine.js",
+    "./persona-engine.js",
+    "./vector-engine.js",
+    "./fusion-engine.js",
+    "./graph-engine.js",
+    "./forgetting-engine.js",
+    "./metacognition-engine.js",
+    "./sleep-engine.js"
   ],
   "exports": {
     "gitSyncManager": "./git-sync.js",
@@ -24,7 +34,17 @@
     "system1Agent": "./system1-agent.js",
     "fullMemoryAgentClient": "./full-memory-agent-client.js",
     "fullMemoryAgentServer": "./full-memory-agent-server.js",
-    "agentCommunicationManager": "./agent-communication.js"
+    "agentCommunicationManager": "./agent-communication.js",
+    "residualEngine": "./residual-engine.js",
+    "routerEngine": "./router-engine.js",
+    "confidenceEngine": "./confidence-engine.js",
+    "personaEngine": "./persona-engine.js",
+    "vectorEngine": "./vector-engine.js",
+    "fusionEngine": "./fusion-engine.js",
+    "graphEngine": "./graph-engine.js",
+    "forgettingEngine": "./forgetting-engine.js",
+    "metacognitionEngine": "./metacognition-engine.js",
+    "sleepEngine": "./sleep-engine.js"
   },
   "configSchema": {
     "type": "object",

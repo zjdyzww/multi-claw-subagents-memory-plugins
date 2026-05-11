@@ -16,7 +16,8 @@ const AGENT_AUTHORS = {
 export class GitSyncManager extends EventEmitter {
     repos = new Map();
     gits = new Map();
-    syncTimers = [];
+    syncTimeouts = [];
+    syncIntervals = [];
     scheduledSyncTimes = ['10:00', '22:00'];
     constructor() {
         super();
@@ -37,21 +38,24 @@ export class GitSyncManager extends EventEmitter {
             const initialDelay = target.getTime() - now.getTime();
             const intervalMs = 24 * 60 * 60 * 1000; // 每天
             // 首次延迟后，每天执行
-            const timer = setTimeout(() => {
+            const timeout = setTimeout(() => {
                 this.syncAllRepos();
-                const dailyTimer = setInterval(() => this.syncAllRepos(), intervalMs);
-                this.syncTimers.push(dailyTimer);
+                const dailyInterval = setInterval(() => this.syncAllRepos(), intervalMs);
+                this.syncIntervals.push(dailyInterval);
             }, initialDelay);
-            this.syncTimers.push(timer);
+            this.syncTimeouts.push(timeout);
         }
         this.emit('scheduledSyncStart', { times, nextSyncIn: 'see console for details' });
     }
     stopScheduledSync() {
-        for (const timer of this.syncTimers) {
-            clearTimeout(timer);
-            clearInterval(timer);
+        for (const timeout of this.syncTimeouts) {
+            clearTimeout(timeout);
         }
-        this.syncTimers = [];
+        for (const interval of this.syncIntervals) {
+            clearInterval(interval);
+        }
+        this.syncTimeouts = [];
+        this.syncIntervals = [];
         this.emit('scheduledSyncStop', {});
     }
     async syncAllRepos() {

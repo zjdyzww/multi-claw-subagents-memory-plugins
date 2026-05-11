@@ -25,19 +25,24 @@
 
 set -e
 
-LOCAL_BASE="${HOME}/.openclaw/memory"
-# 共享仓库 + 动态检测所有智能体的私有仓库 (支持多实例)
-SHARED_REPOS=(
-  "main-memory-shared"
-  "business-memory-shared"
-  "code-memory-shared"
-)
+# 配置加载优先级：环境变量 > 配置文件 > 默认值
+CONFIG_FILE="${MEMORY_SYNC_CONFIG:-${HOME}/.config/memory-sync.env}"
+if [ -f "$CONFIG_FILE" ]; then
+  set -a
+  source "$CONFIG_FILE"
+  set +a
+fi
 
-# 动态检测已安装的私有仓库
-AGENT_TYPES=("openclaw" "hermes" "claude-code" "opencode")
+LOCAL_BASE="${MEMORY_LOCAL_PATH:-${HOME}/.openclaw/memory}"
+SHARED_REPOS_STR="${MEMORY_SHARED_REPOS:-main-memory-shared,business-memory-shared,code-memory-shared}"
+IFS=',' read -ra SHARED_REPOS <<< "$SHARED_REPOS_STR"
+AGENT_TYPES_STR="${MEMORY_AGENT_TYPES:-openclaw,hermes,claude-code,opencode}"
+IFS=',' read -ra AGENT_TYPES <<< "$AGENT_TYPES_STR"
+AGENT_COUNT="${MEMORY_AGENT_COUNT:-5}"
+
 PRIVATE_REPOS=()
 for agent in "${AGENT_TYPES[@]}"; do
-  for i in $(seq 1 5); do
+  for i in $(seq 1 "$AGENT_COUNT"); do
     if [ -d "${LOCAL_BASE}/${agent}-${i}-memory-private" ]; then
       PRIVATE_REPOS+=("${agent}-${i}-memory-private")
     fi

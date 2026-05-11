@@ -77,6 +77,7 @@ export class FullMemoryAgentServer extends EventEmitter {
         this._status.status = 'idle';
         this.currentInput = null;
         this.currentResult = null;
+        this.eventBus.removeAllListeners();
         this.emit('shutdown', { agentId: this.agentId });
     }
     /**

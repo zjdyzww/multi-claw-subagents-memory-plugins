@@ -13,7 +13,9 @@ import type {
   MemoryRepresentation,
   FactPoint,
   ResidualInfo,
+  CleanupRecord,
 } from './types.js';
+import { residualEngine } from './residual-engine.js';
 
 export class FullMemoryAgentClient extends EventEmitter implements AgentInterface {
   public readonly agentId: string;
@@ -27,7 +29,6 @@ export class FullMemoryAgentClient extends EventEmitter implements AgentInterfac
   private currentInput: MemoryRepresentation | null = null;
   private currentResult: MemoryRepresentation | null = null;
   private localMemoryPath: string;
-  private residualQueue: FactPoint[] = [];
 
   constructor(agentId: string, agentType: string, localMemoryPath: string) {
     super();
@@ -66,14 +67,14 @@ export class FullMemoryAgentClient extends EventEmitter implements AgentInterfac
       // 追加写入本地 MEMORY.md
       fs.appendFileSync(this.localMemoryPath, markdown, 'utf-8');
 
-      // 管理残差队列
-      this.manageResidualQueue(input);
+      // 管理残差队列（委托到中央 ResidualEngine）
+      this.delegateResiduals(input);
 
       this.currentResult = {
         ...input,
         id: input.id || `full-client-${Date.now()}`,
         timestamp,
-        residualInfo: this.calculateResidualInfo(),
+        residualInfo: residualEngine.getResidualInfo(),
       };
 
       this._status.processedCount++;
@@ -104,29 +105,29 @@ export class FullMemoryAgentClient extends EventEmitter implements AgentInterfac
   }
 
   /**
-   * 获取残差队列
+   * 获取残差队列（委托到中央 ResidualEngine）
    */
   getResidualQueue(): FactPoint[] {
-    return [...this.residualQueue];
+    return residualEngine.getQueue().map(e => e.fact);
   }
 
   /**
-   * 清除残差队列
+   * 清除残差队列（委托到中央 ResidualEngine）
    */
   clearResidualQueue(): void {
-    this.residualQueue = [];
+    // 遍历并强制解析所有条目
+    for (const entry of residualEngine.getQueue()) {
+      residualEngine.resolve(entry.fact.id, 'forced');
+    }
     this.emit('residualCleared', { agentId: this.agentId });
   }
 
   /**
-   * 从残差队列移除已解决的事实
+   * 从残差队列移除已解决的事实（委托到中央 ResidualEngine）
    */
   resolveResidual(factId: string): void {
-    const index = this.residualQueue.findIndex(f => f.id === factId);
-    if (index >= 0) {
-      this.residualQueue.splice(index, 1);
-      this.emit('residualResolved', { agentId: this.agentId, factId });
-    }
+    residualEngine.resolve(factId, 'active');
+    this.emit('residualResolved', { agentId: this.agentId, factId });
   }
 
   private buildMemoryMarkdown(input: MemoryRepresentation, timestamp: string): string {
@@ -148,42 +149,19 @@ export class FullMemoryAgentClient extends EventEmitter implements AgentInterfac
     return md;
   }
 
-  private manageResidualQueue(input: MemoryRepresentation): void {
-    // 将 UNCERTAIN 的事实加入残差队列
+  private delegateResiduals(input: MemoryRepresentation): void {
+    // 将 UNCERTAIN 的事实加入中央 ResidualEngine
     const uncertainFacts = input.facts.filter(f =>
       f.confidence === 'UNCERTAIN' && !f.verified
     );
 
     for (const fact of uncertainFacts) {
-      // 检查是否已在队列中
-      if (!this.residualQueue.find(f => f.id === fact.id)) {
-        this.residualQueue.push({
-          ...fact,
-          traceabilityId: `residual-${Date.now()}`,
-        });
-      }
+      const enqueued = {
+        ...fact,
+        traceabilityId: `residual-${Date.now()}`,
+      };
+      residualEngine.enqueue(enqueued);
     }
-  }
-
-  private calculateResidualInfo(): ResidualInfo {
-    const now = Date.now();
-    let totalScore = 0;
-
-    for (const fact of this.residualQueue) {
-      // age_weight 基于置信度：UNCERTAIN = 1.0, LIKELY重入 = 0.5
-      const ageWeight = fact.confidence === 'LIKELY' ? 0.5 : 1.0;
-      const residualSize = fact.content.length;
-      totalScore += residualSize * ageWeight;
-    }
-
-    return {
-      size: this.residualQueue.length,
-      ageWeight: this.residualQueue.length > 0 ? 1.0 : 0,
-      residualScore: totalScore,
-      lastCheckAt: new Date().toISOString(),
-      cleanupLayer: totalScore > 1000 ? 1 : totalScore > 500 ? 2 : 3,
-      resolutionAttempts: 0,
-    };
   }
 }
 

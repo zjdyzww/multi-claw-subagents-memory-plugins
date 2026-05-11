@@ -4,6 +4,7 @@
  * 将 14 个记忆引擎暴露为 MCP stdio 工具
  */
 
+import { homedir } from 'os';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
@@ -305,7 +306,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'agent_fullmemory_persist': {
-        const fullPath = `${require('os').homedir()}/.opencode/memory/MEMORY.md`;
+        const fullPath = `${homedir()}/.opencode/memory/MEMORY.md`;
         const fc = new FullMemoryAgentClient('full-opencode', 'opencode', fullPath);
 
         const facts = (args.content as string).split('\n').filter((f: string) => f.trim()).map((f: string, i: number) => {

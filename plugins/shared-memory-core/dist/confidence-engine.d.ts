@@ -31,6 +31,7 @@ export declare class ConfidenceEngine extends EventEmitter {
     private annotations;
     private conflicts;
     private maxConflicts;
+    private maxChainLength;
     /**
      * 标注文档置信度
      */

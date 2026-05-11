@@ -8,11 +8,13 @@ import * as path from 'path';
 export class IndexEngine extends EventEmitter {
     indexes = new Map();
     searchIndex = [];
+    documentCache = new Map();
     lastSearchMs = 0;
     searchCount = 0;
     totalSearchMs = 0;
     queryCache = new Map();
     MAX_CACHE_SIZE = 50;
+    MAX_DOC_CACHE = 200;
     constructor() {
         super();
         // 初始化各仓库的索引
@@ -25,6 +27,10 @@ export class IndexEngine extends EventEmitter {
      */
     parseMemoryFile(filePath, repoType) {
         try {
+            if (!fs.existsSync(filePath)) {
+                console.error(`File not found: ${filePath}`);
+                return null;
+            }
             const content = fs.readFileSync(filePath, 'utf-8');
             const parsed = matter(content);
             return {
@@ -66,9 +72,17 @@ export class IndexEngine extends EventEmitter {
         const repoIndex = this.indexes.get(repoType);
         if (!repoIndex)
             return;
-        const doc = this.parseMemoryFile(filePath, repoType);
-        if (!doc)
+        const parsed = this.parseMemoryFile(filePath, repoType);
+        if (!parsed)
             return;
+        const doc = parsed;
+        // 缓存文档对象，避免搜索时重复解析文件
+        if (this.documentCache.size >= this.MAX_DOC_CACHE) {
+            const firstKey = this.documentCache.keys().next().value;
+            if (firstKey)
+                this.documentCache.delete(firstKey);
+        }
+        this.documentCache.set(filePath, doc);
         // 从文件路径获取相对路径作为索引键
         const relativePath = path.basename(filePath);
         repoIndex.set(relativePath, {
@@ -189,13 +203,17 @@ export class IndexEngine extends EventEmitter {
                     continue;
             }
             if (score > 0) {
-                const doc = this.parseMemoryFile(entry.path, entry.repoType);
-                if (doc) {
-                    results.push({
-                        document: doc,
-                        score,
-                        highlights
-                    });
+                // 优先从缓存读，避免重复解析文件
+                const cached = this.documentCache.get(entry.path);
+                if (cached) {
+                    results.push({ document: cached, score, highlights });
+                }
+                else {
+                    const parsed = this.parseMemoryFile(entry.path, entry.repoType);
+                    if (parsed) {
+                        this.documentCache.set(entry.path, parsed);
+                        results.push({ document: parsed, score, highlights });
+                    }
                 }
             }
         }

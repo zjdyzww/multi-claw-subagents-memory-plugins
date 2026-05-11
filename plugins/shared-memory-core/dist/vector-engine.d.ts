@@ -58,6 +58,7 @@ export declare class VectorEngine extends EventEmitter {
      * 清空所有向量
      */
     clear(): void;
+    private hashFNV1a;
     private generateEmbedding;
     private cosineSimilarity;
 }

@@ -143,6 +143,159 @@ metadata:
 └─────────────┴────────┴──────────┴───────────┘
 ```
 
+### 6. 置信度标注 (memory.annotate)
+
+为记忆文档标注置信度等级，支持三态冲突自动处理。
+
+**使用场景**：
+- 标记高价值知识为 CONFIRMED
+- 标记推断信息为 LIKELY
+- 标记模糊信息为 UNCERTAIN
+
+**参数**：
+```typescript
+{
+  docId: string,            // 文档 ID
+  level: 'CONFIRMED' | 'LIKELY' | 'UNCERTAIN',
+  source: string,           // 标注来源
+  reason?: string           // 标注理由
+}
+```
+
+### 7. 智能路由 (memory.route)
+
+自适应路由引擎，根据查询特征自动选择 direct/parallel/iterative 策略。
+
+**使用场景**：
+- 单点精准查询 → direct
+- 多跳/关系查询 → parallel
+- 探索性/模糊查询 → iterative
+
+**参数**：
+```typescript
+{
+  query: string,            // 查询内容
+  preferSpeed?: boolean,    // 速度优先
+  preferAccuracy?: boolean  // 精度优先
+}
+```
+
+**输出**：
+```
+🔄 路由决策
+策略: parallel
+目标: sys1, sys2, full
+理由: 宽泛多维度查询，并行多代理提高覆盖率
+```
+
+### 8. 专家协作 (memory.collaborate)
+
+4 专家 Persona 协作评估（架构师/审查者/批判者/整合者）。
+
+**使用场景**：
+- 评估信息可靠度
+- 检测信息矛盾
+- 形成多维度共识
+
+**参数**：
+```typescript
+{
+  content: string,                          // 待评估内容
+  facts?: Array<{ content: string; confidence?: 'CONFIRMED' | 'LIKELY' | 'UNCERTAIN' }>
+}
+```
+
+**输出**：
+```
+🤝 专家协作结果
+共识: LIKELY
+🟢 CONFIRMED: 1票 (Architect)
+🟡 LIKELY: 2票 (Reviewer, Integrator)
+🔴 UNCERTAIN: 1票 (Critic)
+```
+
+### 9. 残差队列 (memory.residuals)
+
+查看残差趋零清理引擎状态：三层清理进度、分值、统计数据。
+
+**使用场景**：
+- 监控记忆清理状态
+- 检查未消解残留项
+- 评估记忆系统健康度
+
+**参数**：无
+
+**输出**：
+```
+📊 残差队列状态
+总数: 3 | L1: 2 | L2: 1 | L3: 0
+残差总分: 456.78
+目标: 消解率 ≥70%、驻留 ≤48h、队列 ≤10
+```
+
+### 10. 向量语义检索 (memory.vector_search)
+
+基于 128 维向量嵌入的语义相似度搜索。
+
+**使用场景**：
+- 语义模糊匹配
+- 概念相似度查询
+- 超出关键词范围的深层检索
+
+**参数**：
+```typescript
+{
+  query: string,                    // 查询文本
+  topK?: number,                    // 返回数量，默认 10
+  repoTypes?: string[],             // 仓库过滤
+  filterTags?: string[]             // 标签过滤
+}
+```
+
+### 11. 记忆融合去重 (memory.fuse)
+
+基于 Jaccard 相似度的多源记忆融合去重。
+
+**使用场景**：
+- 合并多代理对同一主题的记忆
+- 消除重复信息
+- 生成统一视图
+
+**参数**：
+```typescript
+{
+  docIds: string[]                  // 需要融合的文档 ID 列表（至少 2 个）
+}
+```
+
+### 12. 记忆质量评估 (memory.assess)
+
+元认知引擎：从完整性/时效性/一致性/置信度分布 4 维度自动评分。
+
+**使用场景**：
+- 定期审查记忆质量
+- 发现低质量记忆
+- 获取改进建议
+
+**参数**：
+```typescript
+{
+  docId?: string                    // 指定文档 ID，不指定则全局评估
+}
+```
+
+**输出**：
+```
+📋 质量评估报告
+总评分: 72/100
+  - 完整性: 85
+  - 时效性: 65
+  - 一致性: 90
+  - 置信度: 50
+⚠ 发现 2 个问题: 内容过短、置信度未标注
+💡 建议: 添加至少 1 个标签、使用 confidence-engine 标注置信度
+```
+
 ## 仓库架构
 
 ```

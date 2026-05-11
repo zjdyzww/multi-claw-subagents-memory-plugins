@@ -171,19 +171,24 @@ export class AgentCommunicationManager {
         }
     }
     /**
-     * 带重试的消息投递
+     * 带重试的消息投递（迭代实现，避免递归栈溢出）
      */
-    async deliverWithRetry(message, handler, attempt = 0) {
-        try {
-            return await handler(message);
-        }
-        catch {
-            if (attempt < this.config.maxRetries) {
-                await this.delay(this.config.retryDelayMs * (attempt + 1));
-                return this.deliverWithRetry(message, handler, attempt + 1);
+    async deliverWithRetry(message, handler, initialAttempt = 0) {
+        let attempt = initialAttempt;
+        let lastError;
+        while (attempt <= this.config.maxRetries) {
+            try {
+                return await handler(message);
             }
-            throw new Error(`Failed to deliver message after ${this.config.maxRetries} retries`);
+            catch (error) {
+                lastError = error;
+                if (attempt < this.config.maxRetries) {
+                    await this.delay(this.config.retryDelayMs * (attempt + 1));
+                }
+                attempt++;
+            }
         }
+        throw new Error(`Failed to deliver message after ${this.config.maxRetries} retries`);
     }
     /**
      * 心跳保活
