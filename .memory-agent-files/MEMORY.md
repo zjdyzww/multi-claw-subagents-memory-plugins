@@ -1,4 +1,4 @@
-# HERMES MEMORY — 东阳景程智造科技
+﻿# HERMES MEMORY — 东阳晓智科技
 
 > **结构原则**: 金字塔原理 · 每 commit 为全量快照 · AI Agent 技能索引优化
 > **记忆框架**: 双系统 v3 — System 2 海绵全量吸收 ↔ System 1 淘金提炼 ↔ 残差趋零清理 ↔ 三地一致性
@@ -8,7 +8,7 @@
 
 ## ◆ L1 — 核心结论（必须记住）
 
-1. **公司**: 东阳景程智造科技 — 工业机械臂工厂，战略方向：人形机器人 + 智能制造
+1. **公司**: 东阳晓智科技 — 工业机械臂工厂，战略方向：人形机器人 + 智能制造
 2. **设计风格**: Cybertruck Industrial — 银黑金属 · 棱角锐利 · 高对比蓝 #00d4ff + 紫 #9b59ff
 3. **微信**: `o9cq804ku-3JCr7N4rZgR4rqkPTg@im.wechat`，`hermes gateway restart` 会丢失 systemd Environment 配置
 4. **Node.js**: `/home/myz/.nvm/versions/node/v24.15.0/bin/` 不在默认 PATH，需 `export PATH=...`
