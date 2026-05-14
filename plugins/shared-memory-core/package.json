@@ -1,6 +1,6 @@
 {
   "name": "@multi-claw/shared-memory-core",
-  "version": "13.0.0",
+  "version": "13.1.0",
   "description": "Shared memory core library for multi-agent memory plugins",
   "type": "module",
   "main": "dist/index.js",

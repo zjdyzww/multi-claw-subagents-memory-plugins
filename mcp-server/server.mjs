@@ -32,7 +32,7 @@ import {
 const PROJECT_ROOT = new URL('..', import.meta.url).pathname;
 
 const server = new Server(
-  { name: 'multi-claw-memory', version: '13.0.0' },
+  { name: 'multi-claw-memory', version: '13.1.0' },
   { capabilities: { tools: {} } }
 );
 
@@ -358,4 +358,4 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-console.error(`Multi-Claw Memory MCP Server v13.0.0 started (${server.capabilities?.tools ? Object.keys(server.capabilities.tools).length : 0} tools)`);
+console.error(`Multi-Claw Memory MCP Server v13.1.0 started (${server.capabilities?.tools ? Object.keys(server.capabilities.tools).length : 0} tools)`);
