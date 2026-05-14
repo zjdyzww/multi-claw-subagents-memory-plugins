@@ -19,8 +19,25 @@ export class GitSyncManager extends EventEmitter {
     syncTimeouts = [];
     syncIntervals = [];
     scheduledSyncTimes = ['10:00', '22:00'];
+    autoSyncEnabled = false;
     constructor() {
         super();
+    }
+    /**
+     * URL 脱敏：移除嵌入式凭证 (user:token@ → 清除)
+     */
+    static sanitizeUrl(url) {
+        return url.replace(/\/\/[^@:]+:[^@]+@/, '//');
+    }
+    /**
+     * 配置 git credential helper（避免 token 写入 remote URL）
+     */
+    configureCredentialHelper(localPath) {
+        try {
+            const git = simpleGit(localPath);
+            git.addConfig('credential.helper', 'store --file ~/.git-credentials', false, 'global');
+        }
+        catch { /* skip if config fails */ }
     }
     /**
      * 启动定时同步（C4 原则: 10:00 + 22:00 + 重大变更立即）
@@ -73,13 +90,21 @@ export class GitSyncManager extends EventEmitter {
      * 注册仓库
      */
     registerRepo(config) {
-        this.repos.set(config.type, config);
-        const git = simpleGit(config.localPath);
-        this.gits.set(config.type, git);
-        // 配置 git 用户信息
-        if (fs.existsSync(config.localPath)) {
+        // 脱敏 URL
+        const cleanConfig = { ...config, url: GitSyncManager.sanitizeUrl(config.url) };
+        this.repos.set(cleanConfig.type, cleanConfig);
+        const git = simpleGit(cleanConfig.localPath);
+        this.gits.set(cleanConfig.type, git);
+        // 配置 git 用户信息 + credential helper
+        if (fs.existsSync(cleanConfig.localPath)) {
             git.addConfig('user.email', 'multi-claw@memory.system', false, 'local');
             git.addConfig('user.name', 'Multi-Claw Memory System', false, 'local');
+            this.configureCredentialHelper(cleanConfig.localPath);
+        }
+        // 首次注册时自动启动定时同步
+        if (!this.autoSyncEnabled && this.repos.size >= 1) {
+            this.autoSyncEnabled = true;
+            this.startScheduledSync();
         }
     }
     /**

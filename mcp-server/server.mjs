@@ -27,19 +27,16 @@ import {
   System1Agent,
   FullMemoryAgentClient,
   AgentCommunicationManager,
-  type MemoryDocument,
-  type ConfidenceLevel,
-  type MemoryRepresentation,
 } from '@multi-claw/shared-memory-core';
 
 const PROJECT_ROOT = new URL('..', import.meta.url).pathname;
 
 const server = new Server(
-  { name: 'multi-claw-memory', version: '13.0.0' },
+  { name: 'multi-claw-memory', version: '13.1.0' },
   { capabilities: { tools: {} } }
 );
 
-function makeDoc(id: string, content: string): MemoryDocument {
+function makeDoc(id, content) {
   return {
     id, title: id, content, repoType: 'main', category: 'mcp', tags: [],
     accessLevel: 'SHARED', author: 'mcp', createdAt: new Date().toISOString(),
@@ -129,10 +126,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     switch (name) {
       case 'memory_search': {
         const results = await indexEngine.searchMemory({
-          text: args.query as string,
-          repoTypes: args.repos as any,
-          tags: args.tags as any,
-          limit: (args.limit as number) || 10,
+          text: args.query,
+          repoTypes: args.repos,
+          tags: args.tags,
+          limit: args.limit || 10,
         });
         const perf = indexEngine.getSearchPerformance();
         return { content: [{ type: 'text', text: JSON.stringify({
@@ -142,7 +139,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'memory_vector_search': {
-        const text = args.text as string;
+        const text = args.text;
         for (const r of [args]) { /* index dummy docs if empty */
           if (vectorEngine.getStats().totalVectors === 0) {
             vectorEngine.index(makeDoc('v1', 'memory architecture design patterns L1-L4 pyramid'));
@@ -151,7 +148,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             vectorEngine.index(makeDoc('v4', 'adaptive router parallel iterative strategy query'));
           }
         }
-        const results = vectorEngine.search(text, { topK: (args.topK as number) || 10 });
+        const results = vectorEngine.search(text, { topK: args.topK || 10 });
         const stats = vectorEngine.getStats();
         return { content: [{ type: 'text', text: JSON.stringify({
           results: results.map(r => ({ title: r.document.title, similarity: Math.round(r.score * 10000) / 10000, preview: r.document.content?.substring(0, 150) })),
@@ -165,7 +162,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'memory_route': {
-        const decision = routerEngine.classifyQuery(args.query as string);
+        const decision = routerEngine.classifyQuery(args.query);
         return { content: [{ type: 'text', text: JSON.stringify({
           query: args.query,
           strategy: decision.strategy,
@@ -181,9 +178,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'memory_annotate': {
-        const doc = makeDoc(`mcp-${Date.now()}`, args.content as string);
-        const level = args.level as ConfidenceLevel;
-        const annotated = confidenceEngine.annotate(doc, level, args.source as string || 'mcp', 'manual annotation');
+        const doc = makeDoc(`mcp-${Date.now()}`, args.content);
+        const level = args.level;
+        const annotated = confidenceEngine.annotate(doc, level, args.source || 'mcp', 'manual annotation');
         return { content: [{ type: 'text', text: JSON.stringify({
           id: annotated.id,
           confidence: annotated.confidence,
@@ -192,12 +189,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'memory_collaborate': {
-        const facts = ((args.facts as string[]) || [args.content as string]).map((f: string, i: number) => ({
-          id: `mcp-f${i}`, content: f, confidence: 'UNCERTAIN' as ConfidenceLevel,
+        const facts = (args.facts || [args.content]).map((f, i) => ({
+          id: `mcp-f${i}`, content: f, confidence: 'UNCERTAIN',
           source: 'user', category: 'evaluation', verified: false,
         }));
         const result = await personaEngine.collaborate({
-          id: `mcp-collab-${Date.now()}`, rawContent: args.content as string,
+          id: `mcp-collab-${Date.now()}`, rawContent: args.content,
           facts, confidence: 'UNCERTAIN', source: 'conversation', timestamp: new Date().toISOString(),
         });
         return { content: [{ type: 'text', text: JSON.stringify({
@@ -214,7 +211,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'memory_fuse': {
-        const texts = args.texts as string[];
+        const texts = args.texts;
         const docs = texts.map((t, i) => makeDoc(`fuse-${i}`, t));
         const result = fusionEngine.fusionPair(docs[0], docs[1]);
         return { content: [{ type: 'text', text: JSON.stringify({
@@ -231,7 +228,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'memory_assess': {
-        const doc = makeDoc(`mcp-assess-${Date.now()}`, args.content as string);
+        const doc = makeDoc(`mcp-assess-${Date.now()}`, args.content);
         const report = metacognitionEngine.assess(doc);
         return { content: [{ type: 'text', text: JSON.stringify({
           scores: report.scores,
@@ -246,7 +243,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const sys2 = new System2Agent('sys2-opencode', 'opencode');
         await sys2.startProcessing({
           id: `mcp-s2-${Date.now()}`,
-          rawContent: args.content as string,
+          rawContent: args.content,
           facts: [],
           confidence: 'UNCERTAIN',
           source: 'opencode-conversation',
@@ -271,7 +268,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const sys2 = new System2Agent('sys2-refine', 'opencode');
         await sys2.startProcessing({
           id: `mcp-s2-pre-${Date.now()}`,
-          rawContent: args.content as string,
+          rawContent: args.content,
           facts: [],
           confidence: 'UNCERTAIN',
           source: 'opencode-conversation',
@@ -309,7 +306,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const fullPath = `${homedir()}/.opencode/memory/MEMORY.md`;
         const fc = new FullMemoryAgentClient('full-opencode', 'opencode', fullPath);
 
-        const facts = (args.content as string).split('\n').filter((f: string) => f.trim()).map((f: string, i: number) => {
+        const content = String(args.content || '');
+        const facts = content.split('\n').filter(f => f.trim()).map((f, i) => {
           const isConfirmed = f.includes('🟢');
           const isLikely = f.includes('🟡');
           return {
@@ -325,7 +323,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const input = {
           id: `mcp-full-${Date.now()}`,
           rawContent: '',
-          refinedContent: args.content as string,
+          refinedContent: args.content,
           facts,
           confidence: 'LIKELY',
           source: 'opencode-pipeline',
@@ -360,4 +358,4 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 const transport = new StdioServerTransport();
 await server.connect(transport);
 
-console.error(`Multi-Claw Memory MCP Server v13.0.0 started (${server.capabilities?.tools ? Object.keys(server.capabilities.tools).length : 0} tools)`);
+console.error(`Multi-Claw Memory MCP Server v13.1.0 started (${server.capabilities?.tools ? Object.keys(server.capabilities.tools).length : 0} tools)`);

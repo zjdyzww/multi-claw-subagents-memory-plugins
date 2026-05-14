@@ -30,6 +30,18 @@ export async function saveMemory(params) {
         // 发布事件
         const docId = generateId(fullPath);
         eventBus.publishMemoryCreated('openclaw', repo, docId, fullPath);
+        // v13.1: 自动 git commit + push (记忆即时同步)
+        try {
+            await gitSyncManager.commitMemory(repo, `[LIKELY][opencode][auto] save: ${title || path}`, [fullPath], {}, {
+                confidence: 'LIKELY',
+                source: 'opencode',
+                memoryType: 'fact',
+                agentId: 'opencode',
+                agentType: 'opencode',
+            });
+            await gitSyncManager.syncRepo(repo);
+        }
+        catch { /* sync is best-effort */ }
         return { success: true, id: docId };
     }
     catch (error) {
@@ -421,6 +433,11 @@ export function registerOpenClawMemoryPlugin(api) {
     api.registerTool('memory_vector_search', vectorSearch);
     api.registerTool('memory_fuse', fuseMemory);
     api.registerTool('memory_assess', assessMemoryQuality);
+    // v13.1: 自动启动定时同步 (10:00/22:00 C4原则)
+    try {
+        gitSyncManager.startScheduledSync();
+    }
+    catch { /* best-effort */ }
     // 注册技能
     api.registerSkill({
         name: 'openclaw-memory',

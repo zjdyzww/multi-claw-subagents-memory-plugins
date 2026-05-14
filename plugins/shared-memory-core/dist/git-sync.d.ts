@@ -19,7 +19,16 @@ export declare class GitSyncManager extends EventEmitter {
     private syncTimeouts;
     private syncIntervals;
     private scheduledSyncTimes;
+    private autoSyncEnabled;
     constructor();
+    /**
+     * URL 脱敏：移除嵌入式凭证 (user:token@ → 清除)
+     */
+    static sanitizeUrl(url: string): string;
+    /**
+     * 配置 git credential helper（避免 token 写入 remote URL）
+     */
+    configureCredentialHelper(localPath: string): void;
     /**
      * 启动定时同步（C4 原则: 10:00 + 22:00 + 重大变更立即）
      */

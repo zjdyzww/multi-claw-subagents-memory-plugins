@@ -1,11 +1,16 @@
 #!/bin/bash
-# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v7.0
+# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v7.2
 #
 # 功能:
-# 1. 创建记忆仓库（默认每种类型1个）
+# 1. 创建记忆仓库（自动检测实例编号, 支持多实例共存）
 # 2. 安装记忆宫殿到各网关 (OpenClaw/Hermes/ClaudeCode/OpenCode)
-# 3. 安装 MCP 服务器到 OpenCode / Claude Desktop
-# 4. 动态增加私有仓库数量
+# 3. 安装 MCP 服务器到 OpenCode
+# 4. 配置 Git credential helper (避免 token 泄露)
+# 5. 自动启动 10:00/22:00 定时同步
+#
+# 多实例:
+#   --auto-instance : 自动检测 Gitea 上已占用的编号，使用下一个可用编号
+#   --instance N    : 指定实例编号 (如 --instance 2 表示第二实例)
 #
 # 用法:
 #   # 初始安装（默认每种1个）
@@ -62,6 +67,8 @@ ADD_AGENT_TYPE=""
 ADD_AGENT_COUNT=""
 INSTALL_OPENCODE_MCP="${INSTALL_OPENCODE_MCP:-false}"
 OPENCODE_CONFIG_PATH="${OPENCODE_CONFIG_PATH:-$HOME/.config/opencode/opencode.json}"
+AUTO_INSTANCE="${AUTO_INSTANCE:-false}"
+MANUAL_INSTANCE="${MANUAL_INSTANCE:-}"
 
 # 解析参数
 while [[ $# -gt 0 ]]; do
@@ -95,6 +102,8 @@ while [[ $# -gt 0 ]]; do
     --local-path) LOCAL_PATH="$2"; shift 2 ;;
     --install-opencode) INSTALL_OPENCODE_MCP="true"; shift ;;
     --opencode-config) OPENCODE_CONFIG_PATH="$2"; shift 2 ;;
+    --auto-instance) AUTO_INSTANCE="true"; shift ;;
+    --instance) MANUAL_INSTANCE="$2"; shift 2 ;;
     *) echo "未知参数: $1"; shift ;;
   esac
 done
@@ -171,6 +180,28 @@ create_repo() {
     return 0
   fi
   
+  # 多实例自动检测
+  if [[ "$AUTO_INSTANCE" == "true" ]]; then
+    log_step "自动检测实例编号..."
+    if [[ -n "$GITSERVER_TOKEN" ]] && command -v curl &>/dev/null; then
+      OPENCLAW_COUNT=$(auto_detect_instance "openclaw")
+      HERMES_COUNT=$(auto_detect_instance "hermes")
+      CLAUDE_CODE_COUNT=$(auto_detect_instance "claude-code")
+      OPENCODE_COUNT=$(auto_detect_instance "opencode")
+      log_info "  检测到可用编号: openclaw=$OPENCLAW_COUNT hermes=$HERMES_COUNT claude-code=$CLAUDE_CODE_COUNT opencode=$OPENCODE_COUNT"
+    else
+      log_warn "  无法自动检测 (需要 curl + Gitea token)，使用默认编号 1"
+    fi
+  fi
+  # 手动指定实例编号
+  if [[ -n "$MANUAL_INSTANCE" ]]; then
+    OPENCLAW_COUNT="$MANUAL_INSTANCE"
+    HERMES_COUNT="$MANUAL_INSTANCE"
+    CLAUDE_CODE_COUNT="$MANUAL_INSTANCE"
+    OPENCODE_COUNT="$MANUAL_INSTANCE"
+    log_info "  手动指定实例编号: $MANUAL_INSTANCE"
+  fi
+
   # 创建仓库
   RESULT=$(curl -s -X POST \
     -H "Authorization: token $GITSERVER_TOKEN" \
@@ -202,6 +233,22 @@ create_private_repos_for_type() {
   echo "  创建 $DISPLAY_NAME 私有仓库 ($COUNT 个):"
   for i in $(seq 1 "$COUNT"); do
     create_repo "${TYPE}-${i}-memory-private" "$DISPLAY_NAME #${i} 私有记忆仓"
+  done
+}
+
+# 自动检测下一个可用实例编号 (多实例共存)
+auto_detect_instance() {
+  local AGENT_TYPE="$1"
+  local i=1
+  while true; do
+    local HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+      -H "Authorization: token $GITSERVER_TOKEN" \
+      "$GITSERVER_URL/api/v1/repos/$GITGROUP/${AGENT_TYPE}-${i}-memory-private" 2>/dev/null || echo "000")
+    if [[ "$HTTP_CODE" != "200" ]]; then
+      echo "$i"
+      return
+    fi
+    i=$((i + 1))
   done
 }
 
@@ -795,6 +842,12 @@ do_install() {
   install_opencode
   
   echo ""
+  # v7.2: 配置 Git credential helper
+  log_step "配置 Git 认证..."
+  git config --global credential.helper store 2>/dev/null || true
+  git config --global credential."https://git.osc.life".username "oauth2" 2>/dev/null || true
+  log_info "  credential.helper: store (已配置)"
+
   log_success "✅ 安装完成!"
   echo ""
   

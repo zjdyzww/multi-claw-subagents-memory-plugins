@@ -1,14 +1,16 @@
 {
   "name": "multi-claw-subagents-memory-plugins",
-  "version": "1.0.0",
-  "description": "> **多智能体多网关多代理记忆增强插件系统**  \r > **版本**: v10.0 | **日期**: 2026-05-09",
+  "version": "13.1.0",
+  "description": "Multi-Claw Subagents Memory Plugins — 多智能体多网关多代理记忆增强插件系统 v13.1 (Radically Simple)",
   "main": "index.js",
   "directories": {
     "doc": "docs",
     "test": "tests"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "repository": {
     "type": "git",
