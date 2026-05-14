@@ -1,11 +1,12 @@
 #!/bin/bash
-# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v7.1
+# install.sh - Multi-Claw Memory Plugins 一次安装脚本 v7.2
 #
 # 功能:
 # 1. 创建记忆仓库（自动检测实例编号, 支持多实例共存）
 # 2. 安装记忆宫殿到各网关 (OpenClaw/Hermes/ClaudeCode/OpenCode)
 # 3. 安装 MCP 服务器到 OpenCode
-# 4. 动态增加私有仓库数量
+# 4. 配置 Git credential helper (避免 token 泄露)
+# 5. 自动启动 10:00/22:00 定时同步
 #
 # 多实例:
 #   --auto-instance : 自动检测 Gitea 上已占用的编号，使用下一个可用编号
@@ -841,6 +842,12 @@ do_install() {
   install_opencode
   
   echo ""
+  # v7.2: 配置 Git credential helper
+  log_step "配置 Git 认证..."
+  git config --global credential.helper store 2>/dev/null || true
+  git config --global credential."https://git.osc.life".username "oauth2" 2>/dev/null || true
+  log_info "  credential.helper: store (已配置)"
+
   log_success "✅ 安装完成!"
   echo ""
   
